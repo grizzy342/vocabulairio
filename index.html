@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1d3557">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Korrektur-Begleiter</title>
+<style>
+:root{
+  --bg:#eef2f6; --card:#ffffff; --ink:#14213d; --muted:#5b6b82; --line:#d5dde7;
+  --accent:#1d3557; --accent-ink:#ffffff; --ok:#2a9d6f; --warn:#e9a23b; --bad:#e5383b;
+  --field:#f6f8fb; --shadow:0 2px 10px rgba(20,33,61,.08);
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0e1522; --card:#17202f; --ink:#e8edf5; --muted:#9aa8bd; --line:#2a3649;
+    --accent:#6fa8ff; --accent-ink:#0e1522; --field:#101927; --shadow:none}
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:17px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right))
+          max(24px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));}
+main{max-width:1100px;margin:0 auto}
+h1{font-size:1.5rem;margin:.2em 0 .1em}
+h2{font-size:1.15rem;margin:0 0 .6em}
+p{margin:.3em 0}
+.muted{color:var(--muted);font-size:.95rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:16px;margin-top:16px}
+@media (min-width:900px){.grid{grid-template-columns:1fr 1fr}.wide{grid-column:1/-1}}
+input,textarea,select{width:100%;min-height:48px;font:inherit;font-size:16px;color:var(--ink);
+  background:var(--field);border:1.5px solid var(--line);border-radius:12px;padding:10px 14px}
+textarea{min-height:130px;resize:vertical}
+button{font:inherit;font-weight:600;min-height:48px;padding:10px 20px;border-radius:12px;
+  border:1.5px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button.ghost{background:transparent;color:var(--accent)}
+button:active{transform:scale(.98)}
+button:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:3px solid var(--warn);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row>input{flex:1 1 200px;width:auto}
+.hidden{display:none!important}
+.toast{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;background:var(--accent);color:var(--accent-ink);padding:12px 22px;border-radius:14px;font-weight:700;box-shadow:0 4px 18px rgba(0,0,0,.25);max-width:90vw;text-align:center}
+
+/* Fortschritt */
+.big{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
+.count{font-size:2.4rem;font-weight:800;letter-spacing:-.02em}
+.pct{font-size:2.4rem;font-weight:800}
+.bar{height:34px;border-radius:17px;background:var(--field);border:1.5px solid var(--line);overflow:hidden;margin:12px 0}
+.fill{height:100%;width:0;border-radius:17px;background:var(--bad);transition:width .6s ease,background-color .6s}
+.msg{font-size:1.1rem;font-weight:600;min-height:3em}
+.actions{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-top:8px}
+.actions .done{min-height:64px;font-size:1.2rem;background:var(--ok);border-color:var(--ok);color:#fff}
+.small{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.small button{min-height:44px;padding:6px 14px;font-size:.9rem}
+
+.lbl{margin:18px 0 8px}
+.banner{position:relative;background:var(--field);border:1px solid var(--line);border-left:5px solid var(--ok);border-radius:12px;padding:12px 52px 12px 16px;margin-bottom:14px}
+.banner p{margin:.25em 0}
+.banner .x{position:absolute;top:2px;right:2px;min-width:44px;padding:0;border:0;background:transparent;color:var(--muted);font-size:1.1rem}
+.elist{list-style:none;padding:0;margin:10px 0 0}
+.erow{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.erow button{min-height:44px;min-width:44px;padding:4px 12px}
+#top{display:flex;flex-wrap:wrap;gap:12px;align-items:stretch;margin-bottom:10px}
+.clk{display:flex;flex-direction:column;justify-content:center;padding:4px 10px}
+#dTime{font-size:2.6rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+#ana{width:116px;height:116px}
+.face{fill:var(--card);stroke:var(--line);stroke-width:2}
+.tk{stroke:var(--ink)}
+.hh,.hm{stroke:var(--ink);stroke-linecap:round}.hh{stroke-width:3.5}.hm{stroke-width:2.5}
+.hs{stroke:var(--bad);stroke-width:1}.hub{fill:var(--bad)}
+#tiles{display:flex;gap:10px;flex-wrap:wrap;flex:1 1 380px}
+.tile{flex:1 1 130px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px;display:flex;flex-direction:column;justify-content:center}
+.tile b{font-size:1.45rem;line-height:1.25;font-variant-numeric:tabular-nums}
+.tl{font-size:.8rem;color:var(--muted)}
+.tile.run{border-color:var(--ok);box-shadow:0 0 0 2px var(--ok)}.tile.brk{border-color:var(--warn);box-shadow:0 0 0 2px var(--warn)}
+body[data-v=home] #tiles,body[data-v=setup] #tiles{display:none}
+#wakeRow{display:flex;justify-content:flex-end;margin-bottom:8px}
+body[data-v=status] #wakeRow,body[data-v=status] #wakeHint{display:none}
+.sm{min-height:40px;padding:4px 12px;font-size:.85rem}
+.paths{display:grid;gap:16px;margin-top:16px}
+@media (min-width:900px){.paths{grid-template-columns:repeat(3,1fr)}}
+.path{display:flex;flex-direction:column;gap:8px;align-items:flex-start;text-align:left;background:var(--card);color:var(--ink);border:1.5px solid var(--line);border-radius:18px;padding:20px;min-height:120px;box-shadow:var(--shadow)}
+.path b{font-size:1.15rem}.path span{font-weight:400;color:var(--muted)}
+.path .row{width:100%}
+.tctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:14px 0 10px}
+button.run{background:var(--ok);border-color:var(--ok);color:#fff}
+body:not([data-ober]) .ober{display:none!important}
+body[data-ober] .simple{display:none!important}
+.banner p{margin:.3em 0}
+.scard{border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0}
+.scard .bar{height:18px;margin:8px 0}.scard p{margin:.2em 0}
+#contList button{width:100%;text-align:left;margin-top:8px}
+/* Start */
+#start{max-width:520px;margin:12vh auto 0;text-align:center}
+#start .row{justify-content:center;margin-top:14px}
+.err{color:var(--bad);font-weight:600;margin-top:8px}
+
+/* KI-Ausgabe */
+.seg{display:flex;border:1.5px solid var(--accent);border-radius:12px;overflow:hidden;margin-bottom:12px}
+.seg button{flex:1;border:0;border-radius:0;background:transparent;color:var(--accent)}
+.seg button.on{background:var(--accent);color:var(--accent-ink)}
+#out{margin-top:14px;padding:16px;border-radius:12px;background:var(--field);border:1px solid var(--line)}
+#out h3{margin:.8em 0 .3em;font-size:1.05rem}
+#out h3:first-child{margin-top:0}
+#out ul,#out ol{padding-left:1.3em;margin:.3em 0}
+.spin{display:inline-block;width:18px;height:18px;border:3px solid var(--line);border-top-color:var(--accent);
+  border-radius:50%;animation:sp .8s linear infinite;vertical-align:-3px;margin-right:8px}
+@keyframes sp{to{transform:rotate(360deg)}}
+details{margin-top:14px}
+summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center}
+
+/* Konfetti */
+.conf{position:fixed;top:-20px;width:10px;height:16px;z-index:50;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:.9}}
+@media (prefers-reduced-motion:reduce){.fill{transition:none}.conf{display:none}}
+</style>
+</head>
+<body>
+<main>
+<header id="top">
+  <div class="clk"><div id="dTime">--:--:--</div><div id="dDate" class="muted"></div></div>
+  <svg id="ana" viewBox="-50 -50 100 100" role="img" aria-label="Analoguhr"><circle r="48" class="face"/><g id="ticks"></g><line id="hH" y2="-26" class="hh"/><line id="hM" y2="-38" class="hm"/><line id="hS" y2="-42" class="hs"/><circle r="2.5" class="hub"/></svg>
+  <div id="tiles">
+    <div class="tile"><span class="tl">Ø pro Korrektur</span><b id="tAvg">–</b></div>
+    <div class="tile" id="tcur"><span class="tl">Aktuelle Korrektur</span><b id="tCur">00:00</b></div>
+    <div class="tile" id="tpom"><span class="tl" id="tPl">Bis zur nächsten Pause</span><b id="tPom">--:--</b></div>
+  </div>
+</header>
+<div id="wakeRow"><button class="ghost sm" id="wakeBtn"></button></div>
+<p id="wakeHint" class="muted hidden">Der Bildschirm kann hier nicht automatisch wach gehalten werden. Stelle die Sperre im System um: iPhone/iPad: Einstellungen → Anzeige &amp; Helligkeit → Automatische Sperre → Nie. Android: Einstellungen → Display → Bildschirm-Timeout.</p>
+
+<section id="v-home">
+  <h1>Korrektur-Begleiter</h1>
+  <p class="muted">Was möchtest du tun?</p>
+  <div class="paths">
+    <button class="path" id="pStatus"><b>📊 Statusübersicht</b><span>Nur ansehen: Fortschritt, verbleibende Korrekturen und Zeit.</span></button>
+    <button class="path" id="pNew"><b>📝 Neue Arbeit korrigieren</b><span>API-Key, dann Fach, Jahrgangsstufe und Anzahl eingeben.</span></button>
+    <div class="path card"><b>▶️ Bestehende Korrektur fortsetzen</b>
+      <div class="row"><input id="impS" type="text" placeholder="Code, z. B. 9erSpa28-12" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false"><button id="impSBtn">Weiter</button></div>
+      <div id="contList"></div>
+      <p id="impSErr" class="err"></p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px"><b>💾 Datensicherung</b>
+    <p class="muted">Alle Kurse mit Fortschritt, Fehlerlisten und Zeiten als Datei (.json) speichern oder auf einem anderen Gerät einlesen. Der API-Key ist nicht enthalten.</p>
+    <div class="row"><button id="bkSave">Sicherung speichern</button><button class="ghost" id="bkLoad">Sicherung einlesen</button><input id="bkFile" type="file" accept=".json,application/json" class="hidden"></div>
+    <p id="bkMsg" class="muted"></p>
+  </div>
+</section>
+
+<section id="v-status" class="card hidden">
+  <h1>Statusübersicht</h1>
+  <div id="sNone" class="hidden"><p>Auf diesem Gerät ist noch kein Kurs gespeichert. Starte auf der Startseite eine neue Arbeit, setze mit einem Code fort oder lies eine Sicherung ein.</p></div>
+  <div id="sBody"><p class="msg" id="sSum"></p><p id="sFeier" style="font-weight:600"></p><div id="sList"></div></div>
+  <button id="sBack">Zur Startseite</button>
+</section>
+
+<section id="v-setup" class="card hidden">
+  <h1 id="setupH">Neue Arbeit korrigieren</h1>
+  <p class="lbl"><b>Schritt 1: API-Key für Claude</b></p>
+  <p class="muted">Der Key bleibt nur in diesem Browser und wird nur an Anthropic gesendet.</p>
+  <div class="row"><input id="key" type="password" placeholder="sk-ant-…" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false"><button id="saveKey">Speichern</button><button class="ghost" id="delKey">Löschen</button></div>
+  <p id="keyState" class="muted"></p>
+  <div id="setupFields" class="hidden">
+    <p class="lbl"><b>Schritt 2: Welches Fach korrigierst du?</b></p>
+    <div class="seg" role="group" aria-label="Fach"><button id="sfr" type="button">Französisch</button><button id="ses" type="button">Spanisch</button></div>
+    <p class="lbl"><label for="jg"><b>Welche Jahrgangsstufe?</b></label></p>
+    <input id="jg" type="text" list="jgl" placeholder="z. B. 9er, E oder Q1" maxlength="8" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
+    <datalist id="jgl"><option value="5er"><option value="6er"><option value="7er"><option value="8er"><option value="9er"><option value="10er"><option value="E"><option value="Q1"><option value="Q2"><option value="Q3"><option value="Q4"></datalist>
+    <p class="lbl"><label for="cname"><b>Kursname (optional)</b></label></p>
+    <input id="cname" type="text" placeholder="z. B. 9a" maxlength="30" autocomplete="off">
+    <p class="lbl"><label for="total"><b>Wie viele Korrekturen gibt es insgesamt?</b></label></p>
+    <input id="total" type="number" inputmode="numeric" min="1" step="1" placeholder="z. B. 28">
+    <div class="row" style="margin-top:16px"><button id="go">Los geht's</button></div>
+    <p id="startErr" class="err"></p>
+  </div>
+  <div class="row" style="margin-top:12px"><button class="ghost" id="back1">Zurück</button></div>
+</section>
+
+<div id="v-app" class="hidden">
+  <h1>Korrektur-Begleiter</h1>
+  <p class="muted" id="sub"></p>
+  <select id="courseSel" class="hidden" aria-label="Kurs wählen"></select>
+  <div class="grid">
+    <section class="card wide">
+      <div id="banner" class="banner hidden" role="status" style="position:relative;background:var(--field);border:1px solid var(--line);border-left:5px solid var(--ok);border-radius:12px;padding:12px 52px 12px 16px;margin-bottom:14px">
+        <button class="x" id="bannerX" aria-label="Hinweis schließen">✕</button><div id="bannerTxt"></div>
+      </div>
+      <div class="big"><div class="count"><span id="x">0</span> / <span id="y">0</span> <span class="muted" style="font-weight:500;font-size:1rem">Korrekturen erledigt</span></div><div class="pct" id="pct">0 %</div></div>
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar"><div class="fill" id="fill"></div></div>
+      <p class="msg" id="msg"></p>
+      <p id="rest" style="font-weight:600"></p>
+      <p id="feier" style="font-weight:600"></p>
+      <div class="tctl">
+        <button id="bStart" class="simple">▶ Start</button>
+        <button id="bStartS" class="ober">▶ Sprachlich</button>
+        <button id="bStartI" class="ober">▶ Inhaltlich</button>
+        <button id="bPause" class="ghost">⏸ Pause</button>
+        <button id="bStop" class="ghost">⏹ <span class="simple">Stopp</span><span class="ober">Stopp: Korrektur fertig</span></button>
+        <button id="bSkip" class="ghost hidden">Pause überspringen</button>
+      </div>
+      <p id="pauseTip" class="muted hidden" style="font-weight:600"></p>
+      <div class="actions"><button class="done" id="plus">Korrektur erledigt ✓ (ohne Zeit)</button><button class="ghost" id="minus">Rückgängig</button></div>
+      <div class="small"><button class="ghost" id="chg">Angaben ändern</button><button class="ghost" id="reset">Kurs löschen</button><button class="ghost" id="dlx" disabled>Zeiten als Excel-Tabelle</button><button class="ghost" id="home1">Zur Startseite</button></div>
+      <details>
+        <summary>Stand sichern oder übertragen</summary>
+        <p class="muted">Der Code enthält Jahrgangsstufe, Fach und Fortschritt, nicht aber Zeitmessungen. Auf einem anderen Gerät unter „Stand übernehmen" einfügen. Die gesammelte Fehlerliste wird nicht mit übertragen. Alles zusammen überträgt die Datensicherung auf der Startseite.</p>
+        <div class="row">
+          <input id="code" type="text" readonly aria-label="Sicherungscode">
+          <button id="copyCode">Code kopieren</button>
+        </div>
+        <p class="muted" style="margin-top:14px">Stand von einem anderen Gerät übernehmen:</p>
+        <div class="row">
+          <input id="impA" type="text" placeholder="Code, z. B. 9erSpa28-12" autocapitalize="characters" autocorrect="off" spellcheck="false">
+          <button class="ghost" id="impABtn">Übernehmen</button>
+        </div>
+        <p id="impAErr" class="err"></p>
+      </details>
+    </section>
+    <section class="card">
+      <h2 id="ponsH">Wörterbuch</h2>
+      <div class="row">
+        <input id="q" type="text" placeholder="Wort oder Wendung" autocapitalize="none" autocorrect="off" spellcheck="false">
+        <button id="ponsBtn">Auf PONS öffnen</button>
+      </div>
+    </section>
+
+    <section class="card wide">
+      <h2 id="aiH">KI-Übersetzer und Fehleranalyse</h2>
+      <textarea id="txt" placeholder="Wort oder Satz in der gewählten Sprache eingeben" autocapitalize="none" autocorrect="off" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button id="ask" title="Strg/Cmd + Enter">Analysieren</button>
+        <button class="ghost hidden" id="copy">Kopieren</button>
+        <button class="ghost hidden" id="goKey">API-Key eingeben</button>
+      </div>
+      <div id="out" class="hidden" aria-live="polite"></div>
+
+      
+    </section>
+
+    <section class="card wide">
+      <h2>Gesammelte typische Fehler (<span id="errCount">0</span>)</h2>
+      <ul id="errs" class="elist"></ul>
+      <div class="row" style="margin-top:12px"><button id="dl" disabled>Als Word-Datei herunterladen</button></div>
+      <p class="muted" id="dlHint"></p>
+    </section>
+  </div>
+</div>
+</main>
+
+<script>
+// ===== Einstellungen (leicht änderbar) =====
+const MODEL = "claude-sonnet-5-5";
+const API_URL = "https://api.anthropic.com/v1/messages";
+const ARBEIT_MIN = 25, PAUSE_KURZ_MIN = 5, PAUSE_LANG_MIN = 15, RUNDEN_BIS_LANGE_PAUSE = 4;  // Pomodoro
+const SCHAETZ_SEK1_MIN = 20, SCHAETZ_SPR_MIN = 25, SCHAETZ_INH_MIN = 20;                     // grobe Schätzung je Korrektur
+
+const store = {
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} }
+};
+const $ = id => document.getElementById(id);
+let total=0, done=0, fach="", jg="", errs=[], courses=[], cid=null, cname="";   // Globale Variablen = aktiver Kurs
+const ABBR = {"Französisch":"Frz","Spanisch":"Spa"};
+const shown = {25:false,50:false,75:false,100:false};
+const newT = ()=>({log:[],cur:{a:0,s:0,i:0},run:null,t0:0});   // Zeitmessung (a = einfach, s/i = sprachlich/inhaltlich)
+const newP = ()=>({phase:"work",left:ARBEIT_MIN*60000,end:0,round:0,long:false});  // Pomodoro
+const TIPS=["👀 20-20-20: 20 Sekunden auf etwas schauen, das etwa 6 Meter entfernt ist.","🙆 Schultern kreisen lassen und den Nacken dehnen.","💧 Ein Glas Wasser trinken.","🪟 Fenster öffnen und tief durchatmen.","🚶 Kurz aufstehen und ein paar Schritte gehen.","👐 Hände und Handgelenke ausschütteln."];
+let T=newT(), P=newP(), lastSave=0, mode="new", backTo="home";
+const hasSet = ()=> total>=1 && !!jg && !!fach;
+const isOber = g => /^(E|Q[1-4]?)$/.test(g);
+const code = ()=> jg+(ABBR[fach]||"")+total+"-"+done;
+const pad = n => String(n).padStart(2,"0");
+function fmt(ms){ const s=Math.round(ms/1000), h=Math.floor(s/3600), m=Math.floor(s%3600/60); return (h?h+":"+pad(m):pad(m))+":"+pad(s%60); }
+const f2 = ms => ms ? fmt(ms) : "–";
+const avgL=(L,k)=>{ const a=L.filter(e=>e[k]>0); return a.length?a.reduce((x,e)=>x+e[k],0)/a.length:0; };
+const avg=k=>avgL(T.log,k);
+const label=c=>c.name ? c.name+" ("+c.jg+" "+c.fach+")" : c.jg+" "+c.fach;
+const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function curSync(){ const c=courses.find(x=>x.id===cid); if(c) Object.assign(c,{name:cname,jg,fach,total,done,errs,T}); }
+// Solange ein Kurs keine eigene Messung hat: Durchschnitt aller Kurse gleicher Stufe (Oberstufe / Sek I)
+function pooled(k,o){ const L=[]; courses.forEach(c=>{ if(isOber(c.jg)===o && c.T && c.T.log) L.push(...c.T.log); }); return avgL(L,k); }
+function estC(c){
+  const z=c.total-c.done; if(z<=0) return {ms:0,rough:false};
+  const o=isOber(c.jg), L=(c.T&&c.T.log)||[], g=k=>avgL(L,k)||pooled(k,o);
+  if(o) return {ms:z*((g("s")||SCHAETZ_SPR_MIN*6e4)+(g("i")||SCHAETZ_INH_MIN*6e4)), rough:!avgL(L,"s")||!avgL(L,"i")};
+  return {ms:z*(g("a")||SCHAETZ_SEK1_MIN*6e4), rough:!avgL(L,"a")};
+}
+function est(){ curSync(); const c=courses.find(x=>x.id===cid); return c&&c.total>c.done ? estC(c) : null; }
+function dur(ms){ const m=Math.max(1,Math.round(ms/6e4)); return m>=60 ? Math.floor(m/60)+" Std. "+(m%60)+" Min." : m+" Min."; }
+function restFmt(e){
+  const m=e.ms/6e4, c = m<15 ? "das ist kürzer als eine Kaffeepause ☕" : m<60 ? "weniger als eine Folge deiner Lieblingsserie 📺" : m<180 ? "ein entspannter Nachmittag, das schaffst du 🌤️" : "verteilt auf ein paar Etappen gut machbar 🧗";
+  return "Voraussichtlich noch "+dur(e.ms)+(e.rough?" (grobe Schätzung)":"")+": "+c;
+}
+const restText=()=>{ const e=est(); return e ? restFmt(e) : "Alles geschafft, genieße deinen Feierabend! 🎉"; };
+// Feierabend-Prognose: jetzt + Restzeit aller Kurse + Pausen nach dem Pomodoro-Rhythmus
+function feierText(){
+  curSync(); let ms=0, rough=false;
+  courses.forEach(c=>{ if(c.total>c.done){ const e=estC(c); ms+=e.ms; rough=rough||e.rough; } });
+  if(!ms) return "";
+  const n=Date.now(), W=ARBEIT_MIN*6e4, brk=P.phase==="break", first=brk?W:P.left;
+  let t=n+(brk?Math.max(0,P.end-n):0)+ms;
+  const nb=ms>first?Math.ceil((ms-first)/W):0;
+  for(let k=1;k<=nb;k++) t+=((P.round+k)%RUNDEN_BIS_LANGE_PAUSE===0?PAUSE_LANG_MIN:PAUSE_KURZ_MIN)*6e4;
+  const d=new Date(t), same=d.toDateString()===new Date(n).toDateString();
+  return "🏠 Feierabend-Prognose: gegen "+d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+" Uhr"+(same?"":" ("+d.toLocaleDateString("de-DE",{weekday:"long"})+")")
+    +(courses.length>1?" für alle "+courses.length+" Kurse":"")+", inklusive Pausen"+(rough?", grobe Schätzung":"");
+}
+
+// ===== Fortschritt =====// ===== Fortschritt =====
+const quotes = [
+  [0,  "Der erste Stapel wartet. Ein Heft nach dem anderen!"],
+  [10, "Guter Start, der Rhythmus kommt von selbst."],
+  [25, "Das erste Viertel ist geschafft!"],
+  [40, "Du bist im Fluss, weiter so."],
+  [50, "Halbzeit! Der Berg ist ab jetzt kleiner als der Weg dahinter."],
+  [65, "Mehr als die Hälfte liegt hinter dir."],
+  [75, "Nur noch ein Viertel, das Ziel ist in Sicht!"],
+  [90, "Fast durch, gleich ist der Schreibtisch frei."],
+  [100,"Alles korrigiert! Zeit für eine Pause."]
+];
+function colorFor(p){ return p<34 ? "var(--bad)" : p<67 ? "var(--warn)" : "var(--ok)"; }
+function persist(){ curSync(); lastSave=Date.now(); store.set("kb_data",JSON.stringify({v:2,cid,courses,P})); }
+const save=persist, saveErrs=persist, saveT=persist;
+function resetShown(){ Object.keys(shown).forEach(k=>shown[k]=false); }
+function render(){
+  const p=total?Math.round(done/total*100):0;
+  $("x").textContent=done; $("y").textContent=total; $("pct").textContent=p+" %";
+  $("fill").style.width=p+"%"; $("fill").style.backgroundColor=colorFor(p); $("bar").setAttribute("aria-valuenow",p);
+  let q=quotes[0][1]; quotes.forEach(([t,s])=>{ if(p>=t) q=s; }); $("msg").textContent=q;
+  $("plus").disabled=done>=total; $("minus").disabled=done<=0; $("bStop").disabled=done>=total; $("dlx").disabled=!T.log.length;
+  $("rest").textContent=restText(); $("code").value=hasSet()?code():"";
+  curSync(); const sel=$("courseSel");
+  sel.innerHTML=courses.map(c=>'<option value="'+c.id+'">'+esc(label(c))+'</option>').join(""); sel.value=cid||""; sel.classList.toggle("hidden",courses.length<2);
+  renderStatus(); renderHome(); renderErrs(); tiles();
+}
+function milestone(p){
+  [25,50,75,100].forEach(m=>{
+    if(p>=m && !shown[m]){ shown[m]=true; if(m===100) confetti(); toast(m===100?"100 % geschafft! 🎉"+(errs.length?" Die Fehlerliste ist bereit.":""):m+" % geschafft! 🎯"); }
+    if(p<m) shown[m]=false;
+  });
+}
+function toast(t,ms){
+  const d=document.createElement("div"); d.className="toast"; d.setAttribute("role","status"); d.textContent=t;
+  document.body.appendChild(d); setTimeout(()=>d.remove(),ms||2600);
+}
+function confetti(){
+  const cols=["#e5383b","#e9a23b","#2a9d6f","#6fa8ff","#c77dff"];
+  for(let i=0;i<90;i++){
+    const d=document.createElement("div"); d.className="conf";
+    d.style.left=Math.random()*100+"vw"; d.style.background=cols[i%cols.length];
+    d.style.animationDuration=(2+Math.random()*2.5)+"s"; d.style.animationDelay=(Math.random()*.8)+"s";
+    document.body.appendChild(d); setTimeout(()=>d.remove(),5500);
+  }
+}
+// ===== Ansichten =====
+function view(v){
+  document.body.dataset.v=v;
+  ["home","status","setup","app"].forEach(n=>$("v-"+n).classList.toggle("hidden",n!==v));
+  if(v==="home"){ $("impSErr").textContent=""; $("bkMsg").textContent=""; renderHome(); }
+  if(v==="setup") openSetup();
+  window.scrollTo(0,0);
+}
+let pick="";
+function pickFach(f){ pick=f; $("sfr").classList.toggle("on",f==="Französisch"); $("ses").classList.toggle("on",f==="Spanisch"); }
+function keyState(){
+  const k=!!store.get("kb_key");
+  $("keyState").textContent = k ? "Key gespeichert ✓ (nur auf diesem Gerät)." : "Noch kein Key gespeichert.";
+  $("setupFields").classList.toggle("hidden", !k && mode!=="edit");
+}
+function openSetup(){
+  const ed=mode==="edit";
+  $("setupH").textContent = ed ? "Angaben ändern" : "Neue Arbeit korrigieren";
+  $("jg").value=ed?jg:""; $("cname").value=ed?cname:""; $("total").value=ed?total:""; pickFach(ed?fach:""); $("startErr").textContent=""; keyState();
+}
+// Jahrgangsstufe vereinheitlichen: "9ER" -> "9er", "q1" -> "Q1", "E-Phase" -> "E", "Q-Phase" -> "Q"
+function normJg(v){
+  v=String(v).replace(/[^0-9A-Za-zÄÖÜäöüß]/g,"");
+  if(/^\d/.test(v)) return v.replace(/^(\d+)(.*)$/,(m,a,b)=>a+b.toLowerCase());
+  return v.toUpperCase().replace(/^([EQ])PHASE$/,"$1");
+}
+function applyFach(){
+  document.body.toggleAttribute("data-ober", isOber(jg));
+  if(!hasSet()) return;
+  const sp=fach==="Spanisch";
+  $("sub").textContent=fach+", Jahrgangsstufe "+jg;
+  $("ponsH").textContent="Wörterbuch "+(sp?"Spanisch":"Französisch")+" ⇄ Deutsch";
+  $("aiH").textContent="KI-Übersetzer und Fehleranalyse ("+fach+")";
+  $("txt").placeholder="Wort oder Satz auf "+fach+" eingeben";
+}
+// ===== Kurse =====
+function loadCourse(id){
+  if(cid && cid!==id){ fold(); T.run=null; curSync(); }   // laufende Zeitmessung des bisherigen Kurses anhalten
+  const c=courses.find(x=>x.id===id); cid=c?c.id:null;
+  cname=c?c.name||"":""; jg=c?c.jg:""; fach=c?c.fach:""; total=c?c.total:0; done=c?c.done:0; errs=c?c.errs:[]; T=c?c.T:newT();
+  const p=total?Math.round(done/total*100):0; [25,50,75,100].forEach(k=>shown[k]=p>=k);
+}
+function openCourse(id){ loadCourse(id); persist(); applyFach(); render(); view("app"); }
+function startApp(){
+  const n=Number($("total").value), g=normJg($("jg").value), nm=$("cname").value.trim().slice(0,30), e=$("startErr");
+  if(!pick){ e.textContent="Bitte das Fach wählen."; return; }
+  if(!g){ e.textContent="Bitte die Jahrgangsstufe eingeben, z. B. 9er, E oder Q1."; return; }
+  if(!Number.isInteger(n)||n<1){ e.textContent="Bitte eine ganze Zahl ab 1 eingeben."; return; }
+  if(mode==="edit"){
+    const reset=g!==jg||pick!==fach;
+    if(reset && (done>0||errs.length||T.log.length) && !confirm("Jahrgangsstufe oder Fach geändert: Fortschritt, Fehlerliste und Zeiten dieses Kurses werden zurückgesetzt. Fortfahren?")) return;
+    if(reset){ done=0; errs=[]; T=newT(); resetShown(); }
+    jg=g; fach=pick; total=n; cname=nm; if(done>total) done=total;
+  } else {
+    curSync(); const id=newId(); courses.push({id,name:nm,jg:g,fach:pick,total:n,done:0,errs:[],T:newT()}); loadCourse(id);
+  }
+  hideBanner(); persist(); applyFach(); render(); view("app");
+}
+function renderHome(){
+  curSync();
+  $("contList").innerHTML=courses.map(c=>'<button class="ghost" data-id="'+c.id+'">'+esc(label(c))+" – "+c.done+" / "+c.total+'</button>').join("");
+}
+function renderStatus(){
+  curSync(); let X=0, Y=0;
+  $("sNone").classList.toggle("hidden",courses.length>0); $("sBody").classList.toggle("hidden",!courses.length);
+  $("sList").innerHTML=courses.map(c=>{
+    X+=c.done; Y+=c.total; const p=Math.round(c.done/c.total*100), z=c.total-c.done, e=estC(c);
+    return '<div class="scard"><div class="big"><b>'+esc(label(c))+(c.id===cid?" (aktiv)":"")+'</b><b>'+c.done+" / "+c.total+" · "+p+' %</b></div><div class="bar"><div class="fill" style="width:'+p+'%;background-color:'+colorFor(p)+'"></div></div><p class="muted">'
+      +(z>0?"Noch "+z+(z===1?" Korrektur":" Korrekturen")+", ca. "+dur(e.ms)+(e.rough?" (grobe Schätzung)":""):"Alle Korrekturen erledigt 🎉")+'</p></div>';
+  }).join("");
+  $("sSum").textContent = Y-X>0 ? "Alle Kurse: noch "+(Y-X)+" von "+Y+" Korrekturen offen." : courses.length ? "Alle Kurse sind komplett erledigt! 🎉" : "";
+}
+
+// ===== Datensicherung (Datei .json) =====
+function dlBlob(blob,name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },4000); }
+function cleanCourse(c,keep){
+  if(!c||typeof c!=="object") return null;
+  const g=normJg(c.jg||""), f=c.fach, t=+c.total, d=+c.done, num=x=>typeof x==="number"&&isFinite(x)&&x>=0?x:0;
+  if(!g||!ABBR[f]||!Number.isInteger(t)||t<1||!Number.isInteger(d)||d<0||d>t) return null;
+  const o=keep&&c.T?c.T:{}, log=(c.T&&Array.isArray(c.T.log)?c.T.log:[]).filter(e=>e&&typeof e==="object").map(e=>({n:num(e.n),a:num(e.a),s:num(e.s),i:num(e.i)}));
+  return {id:String(c.id||newId()).slice(0,40), name:String(c.name||"").slice(0,30), jg:g, fach:f, total:t, done:d,
+    errs:(Array.isArray(c.errs)?c.errs:[]).filter(e=>e&&typeof e.t==="string"&&typeof e.a==="string").map(e=>({t:e.t,a:e.a})),
+    T:Object.assign(newT(),{log,cur:Object.assign({a:0,s:0,i:0},o.cur),run:["a","s","i"].includes(o.run)?o.run:null,t0:+o.t0||0})};
+}
+function importBackup(o){
+  const list=(o&&o.app==="korrektur-begleiter"&&Array.isArray(o.courses)?o.courses:[]).map(c=>cleanCourse(c,false)).filter(Boolean), m=$("bkMsg");
+  if(!list.length){ m.textContent="In der Datei wurden keine gültigen Kurse gefunden."; return; }
+  curSync(); const clash=list.filter(c=>courses.some(x=>x.id===c.id)).length;
+  if(!confirm(list.length+" Kurse einlesen"+(clash?" ("+clash+" davon sind schon vorhanden und werden mit dem Stand aus der Datei überschrieben)":"")+"?")) return;
+  list.forEach(c=>{ const i=courses.findIndex(x=>x.id===c.id); if(i>=0) courses[i]=c; else courses.push(c); });
+  if(cid){ const id=cid; cid=null; loadCourse(id); }
+  persist(); render(); m.textContent=list.length+" Kurse eingelesen ✓";
+}
+$("bkSave").onclick=()=>{
+  curSync(); if(!courses.length){ $("bkMsg").textContent="Es gibt noch keine Kurse zum Sichern."; return; }
+  dlBlob(new Blob([JSON.stringify({app:"korrektur-begleiter",v:2,exportiert:new Date().toISOString(),courses},null,1)],{type:"application/json"}),"Korrektur-Sicherung "+new Date().toISOString().slice(0,10)+".json");
+  $("bkMsg").textContent="Sicherung gespeichert ("+courses.length+" Kurse). Lege die Datei z. B. in iCloud, Google Drive oder schicke sie dir per E-Mail.";
+};
+$("bkLoad").onclick=()=>$("bkFile").click();
+$("bkFile").onchange=e=>{
+  const f=e.target.files[0]; e.target.value=""; if(!f) return;
+  const fr=new FileReader();
+  fr.onload=()=>{ try{ importBackup(JSON.parse(fr.result)); }catch(x){ $("bkMsg").textContent="Die Datei konnte nicht gelesen werden. Bitte eine Sicherungsdatei dieser Seite wählen."; } };
+  fr.onerror=()=>{ $("bkMsg").textContent="Die Datei konnte nicht gelesen werden."; };
+  fr.readAsText(f);
+};
+$("contList").onclick=e=>{ const b=e.target.closest("button[data-id]"); if(b) openCourse(b.dataset.id); };
+$("courseSel").onchange=e=>openCourse(e.target.value);
+
+// ===== Uhren =====
+function buildClock(){
+  $("ticks").innerHTML=[...Array(60)].map((_,i)=>'<line class="tk" y1="'+(i%5?-45:-42)+'" y2="-47" stroke-width="'+(i%5?.6:1.6)+'" transform="rotate('+i*6+')"/>').join("");
+}
+function clocks(){
+  const d=new Date(), h=d.getHours(), m=d.getMinutes(), s=d.getSeconds()+d.getMilliseconds()/1000;
+  $("dTime").textContent=pad(h)+":"+pad(m)+":"+pad(d.getSeconds());
+  $("dDate").textContent=d.toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"});
+  $("hH").setAttribute("transform","rotate("+((h%12)*30+m/2)+")");
+  $("hM").setAttribute("transform","rotate("+(m*6+s/10)+")");
+  $("hS").setAttribute("transform","rotate("+(s*6)+")");
+}
+
+// ===== Zeitmessung und Pomodoro (zeitstempelbasiert) =====
+let ac=null;
+function audio(){ try{ if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)(); if(ac.state==="suspended") ac.resume(); }catch(e){} }
+function beep(){
+  try{ const o=ac.createOscillator(), g=ac.createGain(); o.connect(g); g.connect(ac.destination); o.frequency.value=880; g.gain.setValueAtTime(.2,ac.currentTime); o.start(); o.stop(ac.currentTime+.4); }catch(e){}
+  try{ navigator.vibrate && navigator.vibrate([200,100,200]); }catch(e){}
+}
+// Zeit seit dem letzten Stand zur laufenden Stoppuhr addieren (höchstens bis zum Ende der Arbeitsphase)
+function fold(){
+  const n=Date.now();
+  if(T.run && P.phase==="work"){ const d=Math.max(0,Math.min(n-T.t0,P.left)); T.cur[T.run]+=d; P.left-=d; }
+  T.t0=n;
+}
+function startBreak(n){
+  P.round++; P.long = P.round%RUNDEN_BIS_LANGE_PAUSE===0; P.phase="break";
+  P.end=n+(P.long?PAUSE_LANG_MIN:PAUSE_KURZ_MIN)*6e4; P.tip=TIPS[(P.round-1)%TIPS.length]; beep();
+  toast("Zeit für eine Pause ☕"+(P.long?" (lange Pause)":"")+" "+P.tip,9000);
+}
+function tick(){
+  const n=Date.now();
+  if(T.run){ fold(); if(P.left<=0){ T.run=null; startBreak(n); saveT(); } }
+  else if(P.phase==="break" && n>=P.end){ P.phase="work"; P.left=ARBEIT_MIN*6e4; beep(); toast("Die Pause ist vorbei. Weiter geht's! 💪",6000); saveT(); }
+  clocks(); tiles(); if(n-lastSave>5000) saveT();
+}
+function tiles(){
+  const n=Date.now(), o=isOber(jg), c=T.cur, brk=P.phase==="break", fin=total>0&&done>=total;
+  $("tAvg").innerHTML = o ? "spr. "+f2(avg("s"))+"<br>inh. "+f2(avg("i")) : f2(avg("a"));
+  $("tCur").innerHTML = o ? "spr. "+fmt(c.s)+"<br>inh. "+fmt(c.i) : fmt(c.a);
+  $("tPl").textContent = brk ? (P.long?"Lange Pause ☕":"Pause ☕") : "Bis zur nächsten Pause";
+  $("tPom").textContent = fmt(brk ? Math.max(0,P.end-n) : P.left);
+  $("tcur").classList.toggle("run",!!T.run); $("tpom").classList.toggle("brk",brk);
+  [["bStart","a"],["bStartS","s"],["bStartI","i"]].forEach(([id,k])=>{ $(id).classList.toggle("run",T.run===k); $(id).disabled=brk||fin; });
+  $("bPause").disabled=!T.run; $("feier").textContent=$("sFeier").textContent=feierText(); $("pauseTip").classList.toggle("hidden",!brk); $("pauseTip").textContent=P.tip||""; $("bSkip").classList.toggle("hidden",!brk);
+}
+function startT(k){ if(P.phase==="break") return; fold(); T.run=k; T.t0=Date.now(); saveT(); tiles(); }
+function pauseT(){ fold(); T.run=null; saveT(); tiles(); }
+function stopT(){
+  if(done>=total) return; fold(); const c=T.cur;
+  if(c.a>0||c.s>0||c.i>0) T.log.push(isOber(jg) ? {n:done+1,s:c.s,i:c.i} : {n:done+1,a:c.a});
+  T.run=null; T.cur={a:0,s:0,i:0}; count(1);
+}
+function count(d){
+  if(d>0 && done<total) done++;
+  else if(d<0 && done>0){ const l=T.log[T.log.length-1]; if(l&&l.n===done) T.log.pop(); done--; }
+  else return;
+  save(); saveT(); render(); milestone(Math.round(done/total*100));
+}
+
+// ===== Bildschirm wach halten =====
+let wl=null, wakeOn=store.get("kb_wake")!=="0", wakeFail=false;
+async function reqWake(){
+  if(!wakeOn||wl||document.visibilityState!=="visible") return;
+  try{ if(!navigator.wakeLock) throw 0; wl=await navigator.wakeLock.request("screen"); wakeFail=false; wl.addEventListener("release",()=>{ wl=null; wakeUi(); }); }
+  catch(e){ wl=null; wakeFail=true; }
+  wakeUi();
+}
+function wakeUi(){
+  $("wakeBtn").textContent = !wakeOn ? "🌙 Bildschirm darf ausgehen" : wl ? "☀️ Bildschirm bleibt an" : "☀️ Bildschirm bleibt an (wird angefordert)";
+  $("wakeHint").classList.toggle("hidden", !(wakeOn&&wakeFail));
+}
+$("wakeBtn").onclick=()=>{ wakeOn=!wakeOn; store.set("kb_wake",wakeOn?"1":"0"); if(!wakeOn&&wl){ wl.release(); wl=null; } wakeFail=false; wakeUi(); reqWake(); };
+["pointerdown","keydown"].forEach(ev=>document.addEventListener(ev,()=>{ reqWake(); audio(); }));
+document.addEventListener("visibilitychange",reqWake);
+
+// ===== Code: Hinweis, Übernehmen, Kopieren =====
+function copyText(t,btn,label){
+  const ok=()=>{ btn.textContent="Kopiert ✓"; setTimeout(()=>btn.textContent=label,1800); };
+  const fb=()=>{ const a=document.createElement("textarea"); a.value=t; document.body.appendChild(a); a.select(); try{document.execCommand("copy");}catch(_){} a.remove(); ok(); };
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok,fb); else fb();
+}
+function hideBanner(){ $("banner").classList.add("hidden"); }
+function showBanner(){
+  const z=total-done;
+  let h="<p>"+(z>0 ? (z===1?"Es muss nur noch <b>1</b> Korrektur gemacht werden":"Es müssen nur noch <b>"+z+"</b> Korrekturen gemacht werden")+" ("+total+" − "+done+" = "+z+")." : "Alle Korrekturen sind erledigt! 🎉")+"</p>";
+  if(z>=10) h+="<p>Du musst nicht alles korrigieren, du kannst auch nur 3 bis 5 Korrekturen erledigen. 💪😊🌟</p>";
+  else if(z>0){ h+="<p>Auf geht's! Endspurt! 🏁🔥💪</p>"; if(z<5) h+="<p>Korrigiere alles in einem Rutsch fertig! 🚀🎉💥</p>"; }
+  if(z>0) h+="<p>"+restText()+"</p>";
+  $("bannerTxt").innerHTML=h; $("banner").classList.remove("hidden");
+}
+function importCode(inputId,errId){
+  const m=$(inputId).value.trim().match(/^(.+?)(Frz|Spa)(\d+)-(\d+)$/i), g=m?normJg(m[1]):"", t=m?+m[3]:0, d=m?+m[4]:0;
+  if(!m||!g||t<1||d>t){ $(errId).textContent="Der Code ist ungültig. Beispiele: 9erSpa28-12 oder EFrz26-10"; return; }
+  const f=/^frz$/i.test(m[2])?"Französisch":"Spanisch";
+  curSync();   // gleicher Kurs (Jahrgang, Fach, Anzahl) wird aktualisiert, sonst als neuer Kurs angelegt
+  let c=courses.find(x=>x.jg===g&&x.fach===f&&x.total===t);
+  if(!c){ c={id:newId(),name:"",jg:g,fach:f,total:t,done:d,errs:[],T:newT()}; courses.push(c); }
+  c.done=d; $(errId).textContent=""; $(inputId).value="";
+  loadCourse(c.id); persist(); applyFach(); render(); view("app"); showBanner(); toast("Stand übernommen ✓");
+}
+
+// ===== Bedienung =====
+$("pStatus").onclick=()=>view("status");
+$("pNew").onclick=()=>{ mode="new"; backTo="home"; view("setup"); };
+$("sBack").onclick=$("home1").onclick=()=>view("home");
+$("back1").onclick=()=>view(backTo);
+$("chg").onclick=()=>{ mode="edit"; backTo="app"; view("setup"); };
+$("goKey").onclick=()=>{ mode="edit"; backTo="app"; view("setup"); };
+$("sfr").onclick=()=>pickFach("Französisch"); $("ses").onclick=()=>pickFach("Spanisch");
+$("go").onclick=startApp;
+["total","jg"].forEach(i=>$(i).addEventListener("keydown",e=>{ if(e.key==="Enter") startApp(); }));
+$("saveKey").onclick=()=>{ const k=$("key").value.trim(); if(k){ store.set("kb_key",k); $("key").value=""; } keyState(); };
+$("delKey").onclick=()=>{ store.del("kb_key"); $("key").value=""; keyState(); };
+$("key").addEventListener("keydown",e=>{ if(e.key==="Enter") $("saveKey").click(); });
+$("bStart").onclick=()=>startT("a"); $("bStartS").onclick=()=>startT("s"); $("bStartI").onclick=()=>startT("i");
+$("bPause").onclick=pauseT; $("bStop").onclick=stopT;
+$("bSkip").onclick=()=>{ P.phase="work"; P.left=ARBEIT_MIN*6e4; saveT(); tiles(); };
+$("plus").onclick=()=>count(1); $("minus").onclick=()=>count(-1);
+$("bannerX").onclick=hideBanner;
+$("copyCode").onclick=()=>copyText($("code").value,$("copyCode"),"Code kopieren");
+$("impABtn").onclick=()=>importCode("impA","impAErr"); $("impSBtn").onclick=()=>importCode("impS","impSErr");
+$("impA").addEventListener("keydown",e=>{ if(e.key==="Enter") importCode("impA","impAErr"); });
+$("impS").addEventListener("keydown",e=>{ if(e.key==="Enter") importCode("impS","impSErr"); });
+$("reset").onclick=()=>{
+  if(!confirm("Diesen Kurs wirklich löschen? Fortschritt, Fehlerliste und Zeiten dieses Kurses gehen verloren.")) return;
+  courses=courses.filter(c=>c.id!==cid); cid=null; loadCourse(null);
+  persist(); hideBanner(); applyFach(); render(); view("home");
+};
+
+// ===== PONS (nur das gewählte Fach) =====
+function openPons(){
+  const term=$("q").value.trim(); if(!term){ $("q").focus(); return; }
+  const dict = fach==="Spanisch" ? "spanisch-deutsch" : "französisch-deutsch";
+  window.open("https://de.pons.com/"+encodeURI("übersetzung")+"/"+encodeURI(dict)+"/"+encodeURIComponent(term),"_blank","noopener");
+}
+$("ponsBtn").onclick=openPons;
+$("q").addEventListener("keydown",e=>{ if(e.key==="Enter") openPons(); });
+
+// ===== KI =====
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function inline(s){ return s.replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/\*(.+?)\*/g,"<i>$1</i>").replace(/`(.+?)`/g,"<code>$1</code>"); }
+// Einfaches Markdown: Überschriften, Listen, Fett/Kursiv
+function md(text){
+  const lines = esc(text).split("\n"); let html="", list=null;
+  const close=()=>{ if(list){ html+="</"+list+">"; list=null; } };
+  for(const raw of lines){
+    const l=raw.trimEnd(); let m;
+    if((m=l.match(/^#{1,4}\s+(.*)/))){ close(); html+="<h3>"+inline(m[1])+"</h3>"; }
+    else if((m=l.match(/^\s*[-*•]\s+(.*)/))){ if(list!=="ul"){ close(); html+="<ul>"; list="ul"; } html+="<li>"+inline(m[1])+"</li>"; }
+    else if((m=l.match(/^\s*\d+[.)]\s+(.*)/))){ if(list!=="ol"){ close(); html+="<ol>"; list="ol"; } html+="<li>"+inline(m[1])+"</li>"; }
+    else if(l.trim()===""){ close(); }
+    else { close(); html+="<p>"+inline(l)+"</p>"; }
+  }
+  close(); return html;
+}
+function systemPrompt(l){
+  return "Du bist ein erfahrener Lehrer für "+l+" und unterstützt bei der Korrektur von Schülerarbeiten. "+
+  "Der Nutzer gibt dir ein Wort oder einen Satz auf "+l+". Frage nicht nach, was du tun sollst, sondern lege sofort los. "+
+  "Antworte immer auf Deutsch und strukturiert in Markdown mit Überschriften. "+
+  "Bei einem Satz oder Text: 1) Überschrift 'Übersetzung' mit der deutschen Übersetzung. "+
+  "2) Überschrift 'Fehleranalyse' mit den Unterpunkten Grammatik, Lexik und Syntax. Nenne dort jeweils den Fehler, die Korrektur und eine kurze Erklärung. "+
+  "Wenn es in einer Kategorie keine Fehler gibt, schreibe 'keine Fehler'. "+
+  "3) Überschrift 'Korrigierte Fassung' mit dem fehlerfreien Satz. "+
+  "Bei einem einzelnen Wort: gib Übersetzung, Wortart, Genus (falls vorhanden) und einen Beispielsatz mit deutscher Übersetzung an.";
+}
+let lastAnswer="";
+async function analyze(){
+  const text=$("txt").value.trim(), out=$("out");
+  if(!text){ $("txt").focus(); return; }
+  const key=store.get("kb_key"); $("goKey").classList.toggle("hidden",!!key);
+  out.classList.remove("hidden"); $("copy").classList.add("hidden");
+  if(!key){ out.innerHTML='<p class="err">Kein API-Key gespeichert. Bitte zuerst den Key eingeben.</p>'; return; }
+  out.innerHTML='<span class="spin"></span>Claude analysiert …'; $("ask").disabled=true;
+  const ctl = new AbortController(); const to = setTimeout(()=>ctl.abort(), 60000);
+  try{
+    const r = await fetch(API_URL,{
+      signal:ctl.signal,
+      method:"POST",
+      headers:{"content-type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      body:JSON.stringify({model:MODEL,max_tokens:1500,system:systemPrompt(fach),messages:[{role:"user",content:text}]})
+    });
+    const data = await r.json().catch(()=>({}));
+    if(!r.ok){
+      let m = "Fehler "+r.status+".";
+      if(r.status===401) m="Der API-Key ist ungültig. Bitte prüfen und neu speichern.";
+      else if(r.status===404) m="Das Modell „"+MODEL+"“ wurde nicht gefunden. Bitte die Konstante MODEL im Code prüfen.";
+      else if(r.status===429) m="Zu viele Anfragen oder Limit erreicht. Bitte kurz warten.";
+      else if(r.status===400 && data.error && /credit|balance/i.test(data.error.message||"")) m="Das Guthaben des API-Kontos ist aufgebraucht.";
+      else if(data.error && data.error.message) m+=" "+data.error.message;
+      out.innerHTML='<p class="err">'+esc(m)+'</p>'; return;
+    }
+    lastAnswer=(data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n");
+    out.innerHTML=md(lastAnswer); $("copy").classList.remove("hidden");
+    if(lastAnswer.trim()) addErr(text,lastAnswer);
+  }catch(e){
+    out.innerHTML='<p class="err">'+(e.name==="AbortError"?"Die Anfrage hat zu lange gedauert. Bitte erneut versuchen.":"Keine Verbindung zu Claude. Bitte Internetverbindung prüfen und erneut versuchen.")+'</p>';
+  }finally{ clearTimeout(to); $("ask").disabled=false; }
+}
+$("ask").onclick=analyze;
+$("txt").addEventListener("keydown",e=>{ if(e.key==="Enter" && (e.ctrlKey||e.metaKey)){ e.preventDefault(); analyze(); } });
+$("copy").onclick=async()=>{
+  try{ await navigator.clipboard.writeText(lastAnswer); }
+  catch(e){ const t=document.createElement("textarea"); t.value=lastAnswer; document.body.appendChild(t); t.select(); try{document.execCommand("copy");}catch(_){} t.remove(); }
+  $("copy").textContent="Kopiert ✓"; setTimeout(()=>$("copy").textContent="Kopieren",1800);
+};
+
+// ===== Gesammelte Fehler =====
+function addErr(text,answer){
+  const i=errs.findIndex(e=>e.t===text);
+  if(i>=0) errs[i].a=answer; else errs.push({t:text,a:answer});
+  saveErrs(); renderErrs();
+}
+function renderErrs(){
+  const ul=$("errs"); ul.innerHTML="";
+  errs.forEach((e,i)=>{
+    const li=document.createElement("li"); li.className="erow";
+    const sp=document.createElement("span"); sp.textContent=(i+1)+". "+e.t;
+    const b=document.createElement("button"); b.className="ghost"; b.textContent="✕"; b.setAttribute("aria-label","Eintrag "+(i+1)+" entfernen");
+    b.onclick=()=>{ errs.splice(i,1); saveErrs(); renderErrs(); };
+    li.append(sp,b); ul.appendChild(li);
+  });
+  const full = total>0 && done>=total;
+  $("errCount").textContent=errs.length;
+  $("dl").disabled = !(full && errs.length);
+  $("dlHint").textContent = !errs.length ? "Jede Analyse wird hier automatisch gesammelt." :
+    full ? "Bereit: "+docName() : "Der Download wird bei 100 % freigeschaltet.";
+}
+const docName=()=>jg+" "+(ABBR[fach]||"")+" typische Fehler.docx";
+
+// ===== Word-Datei ohne Bibliothek (ZIP im „Store"-Modus + OOXML) =====
+const crcT=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
+function crc32(b){let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=crcT[(c^b[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0;}
+function zip(files,mime){
+  const enc=new TextEncoder(), parts=[], cd=[]; let off=0;
+  const u16=n=>[n&255,(n>>>8)&255], u32=n=>[n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255];
+  files.forEach(([name,str])=>{
+    const nb=enc.encode(name), db=enc.encode(str), crc=crc32(db), L=db.length;
+    const lh=new Uint8Array([0x50,0x4b,3,4,...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(crc),...u32(L),...u32(L),...u16(nb.length),...u16(0)]);
+    parts.push(lh,nb,db);
+    cd.push(new Uint8Array([0x50,0x4b,1,2,...u16(20),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(crc),...u32(L),...u32(L),...u16(nb.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(off)]),nb);
+    off+=lh.length+nb.length+L;
+  });
+  const size=cd.reduce((a,b)=>a+b.length,0);
+  const end=new Uint8Array([0x50,0x4b,5,6,0,0,0,0,...u16(files.length),...u16(files.length),...u32(size),...u32(off),0,0]);
+  return new Blob([...parts,...cd,end],{type:mime||"application/vnd.openxmlformats-officedocument.wordprocessingml.document"});
+}
+const xe=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const run=(t,o)=>{o=o||{};return '<w:r><w:rPr>'+(o.b?'<w:b/>':'')+(o.sz?'<w:sz w:val="'+o.sz+'"/>':'')+'</w:rPr><w:t xml:space="preserve">'+xe(t)+'</w:t></w:r>';};
+const para=(r,o)=>{o=o||{};return '<w:p><w:pPr><w:spacing w:before="'+(o.before||0)+'" w:after="'+(o.after||80)+'"/>'+(o.ind?'<w:ind w:left="'+o.ind+'"/>':'')+'</w:pPr>'+r+'</w:p>';};
+const boldRuns=t=>t.split("**").map((s,i)=>s?run(s.replace(/[*`]/g,""),{b:i%2===1}):"").join("");
+function answerParas(a){
+  return a.split("\n").map(l=>{
+    l=l.trim(); if(!l) return ""; let m;
+    if((m=l.match(/^#{1,4}\s+(.*)/))) return para(run(m[1].replace(/[*`]/g,""),{b:1}),{before:80,ind:360});
+    if((m=l.match(/^[-*•]\s+(.*)/))) return para(run("• ")+boldRuns(m[1]),{ind:720});
+    return para(boldRuns(l),{ind:360});
+  }).join("");
+}
+function downloadDocx(){
+  let body=para(run("Typische Fehler – "+jg+" "+fach,{b:1,sz:36}),{after:120})
+    +para(run(done+" von "+total+" Korrekturen erledigt, erstellt am "+new Date().toLocaleDateString("de-DE")),{after:240});
+  errs.forEach((e,i)=>{ body+=para(run((i+1)+". "+e.t,{b:1,sz:26}),{before:240,after:80})+answerParas(e.a); });
+  const W='xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"', H='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+  const R="http://schemas.openxmlformats.org/officeDocument/2006/relationships", PR='xmlns="http://schemas.openxmlformats.org/package/2006/relationships"';
+  const blob=zip([
+    ["[Content_Types].xml",H+'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>'],
+    ["_rels/.rels",H+'<Relationships '+PR+'><Relationship Id="rId1" Type="'+R+'/officeDocument" Target="word/document.xml"/></Relationships>'],
+    ["word/_rels/document.xml.rels",H+'<Relationships '+PR+'><Relationship Id="rId1" Type="'+R+'/styles" Target="styles.xml"/></Relationships>'],
+    ["word/styles.xml",H+'<w:styles '+W+'><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/><w:sz w:val="22"/><w:lang w:val="de-DE"/></w:rPr></w:rPrDefault></w:docDefaults></w:styles>'],
+    ["word/document.xml",H+'<w:document '+W+'><w:body>'+body+'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>']
+  ]);
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=docName();
+  document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },4000);
+}
+$("dl").onclick=downloadDocx;
+
+// ===== Excel-Tabelle mit den Arbeitszeiten (ohne Bibliothek) =====
+function downloadXlsx(){
+  const o=isOber(jg), L=T.log, D=864e5;
+  const S=(v,s)=>({v,s,str:1}), N=(v,s,f)=>({v,s,f});
+  const nSum=o?6:2, hdr=6+nSum, f1=hdr+1, l1=hdr+L.length, rg=c=>c+f1+":"+c+l1;
+  const tot=k=>L.reduce((x,e)=>x+(e[k]||0),0)/D;
+  const av=k=>{ const a=L.filter(e=>e[k]>0); return a.length?a.reduce((x,e)=>x+e[k],0)/a.length/D:0; };
+  const avT=L.length?(tot("s")+tot("i"))/L.length:0;
+  const rows=[[S("Korrekturzeiten – "+jg+" "+fach,2)],
+    [S(done+" von "+total+" Korrekturen erledigt, davon "+L.length+" mit Zeitmessung. Stand: "+new Date().toLocaleDateString("de-DE"),0)],[],[S("Zusammenfassung",1)]];
+  if(o) rows.push(
+    [S("Gesamtzeit sprachlich",0),N(tot("s"),4,"SUM("+rg("B")+")")],
+    [S("Gesamtzeit inhaltlich",0),N(tot("i"),4,"SUM("+rg("C")+")")],
+    [S("Gesamte Arbeitszeit",1),N(tot("s")+tot("i"),5,"SUM("+rg("D")+")")],
+    [S("Ø sprachlich pro Korrektur",0),N(av("s"),4,'AVERAGEIF('+rg("B")+',">0")')],
+    [S("Ø inhaltlich pro Korrektur",0),N(av("i"),4,'AVERAGEIF('+rg("C")+',">0")')],
+    [S("Ø gesamt pro Korrektur",1),N(avT,5,'AVERAGEIF('+rg("D")+',">0")')]);
+  else rows.push(
+    [S("Gesamte Arbeitszeit",1),N(tot("a"),5,"SUM("+rg("B")+")")],
+    [S("Ø pro Korrektur",1),N(av("a"),5,'AVERAGEIF('+rg("B")+',">0")')]);
+  rows.push([], o ? [S("Korrektur Nr.",3),S("Sprachlich (h:mm:ss)",3),S("Inhaltlich (h:mm:ss)",3),S("Gesamt (h:mm:ss)",3)] : [S("Korrektur Nr.",3),S("Zeit (h:mm:ss)",3)]);
+  L.forEach((e,i)=>{ const r=f1+i;
+    rows.push(o ? [N(e.n,0),N((e.s||0)/D,4),N((e.i||0)/D,4),N(((e.s||0)+(e.i||0))/D,4,"B"+r+"+C"+r)] : [N(e.n,0),N((e.a||0)/D,4)]); });
+  const cell=(ref,c)=>c.str ? '<c r="'+ref+'" s="'+c.s+'" t="inlineStr"><is><t xml:space="preserve">'+xe(c.v)+'</t></is></c>'
+    : '<c r="'+ref+'" s="'+c.s+'">'+(c.f?'<f>'+xe(c.f)+'</f>':'')+'<v>'+c.v+'</v></c>';
+  const sheet=rows.map((r,ri)=>'<row r="'+(ri+1)+'">'+r.map((c,ci)=>cell("ABCD"[ci]+(ri+1),c)).join("")+'</row>').join("");
+  const H='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>', M='xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"';
+  const R="http://schemas.openxmlformats.org/officeDocument/2006/relationships", PR='xmlns="http://schemas.openxmlformats.org/package/2006/relationships"';
+  const X='<xf numFmtId="#N" fontId="#F" fillId="#L" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1"';
+  const xf=(n,f,l,c)=>X.replace("#N",n).replace("#F",f).replace("#L",l)+(c?'><alignment horizontal="center"/></xf>':'/>');
+  const ct="application/vnd.openxmlformats-officedocument.spreadsheetml.";
+  const blob=zip([
+    ["[Content_Types].xml",H+'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="'+ct+'sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="'+ct+'worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="'+ct+'styles+xml"/></Types>'],
+    ["_rels/.rels",H+'<Relationships '+PR+'><Relationship Id="rId1" Type="'+R+'/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+    ["xl/workbook.xml",H+'<workbook '+M+' xmlns:r="'+R+'"><sheets><sheet name="Korrekturzeiten" sheetId="1" r:id="rId1"/></sheets></workbook>'],
+    ["xl/_rels/workbook.xml.rels",H+'<Relationships '+PR+'><Relationship Id="rId1" Type="'+R+'/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="'+R+'/styles" Target="styles.xml"/></Relationships>'],
+    ["xl/styles.xml",H+'<styleSheet '+M+'><numFmts count="1"><numFmt numFmtId="164" formatCode="[h]:mm:ss"/></numFmts><fonts count="3"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="16"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFDCE6F1"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="6">'+xf(0,0,0)+xf(0,1,0)+xf(0,2,0)+xf(0,1,2,1)+xf(164,0,0)+xf(164,1,0)+'</cellXfs></styleSheet>'],
+    ["xl/worksheets/sheet1.xml",H+'<worksheet '+M+'><cols><col min="1" max="1" width="32" customWidth="1"/><col min="2" max="4" width="22" customWidth="1"/></cols><sheetData>'+sheet+'</sheetData></worksheet>']
+  ],ct+"sheet");
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=jg+" "+(ABBR[fach]||"")+" Korrekturzeiten.xlsx";
+  document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },4000);
+}
+$("dlx").onclick=downloadXlsx;
+
+// ===== Start =====
+(function init(){
+  try{ const d=JSON.parse(store.get("kb_data")||"null");
+    if(d&&Array.isArray(d.courses)){ courses=d.courses.map(c=>cleanCourse(c,true)).filter(Boolean); cid=d.cid; if(d.P) P=Object.assign(newP(),d.P); } }catch(e){}
+  if(!courses.length && !store.get("kb_data")){   // Übernahme aus der Einzelkurs-Version
+    const tt=parseInt(store.get("kb_total"),10)||0, j=store.get("kb_jg")||"", f=store.get("kb_fach"); let x={},er=[];
+    try{ x=JSON.parse(store.get("kb_time")||"{}")||{}; er=JSON.parse(store.get("kb_errs")||"[]"); }catch(e){}
+    const c=tt>=1&&j ? cleanCourse({jg:j,fach:f,total:tt,done:parseInt(store.get("kb_done"),10)||0,errs:er,T:x.T},true) : null;
+    if(c){ courses=[c]; cid=c.id; if(x.P) P=Object.assign(newP(),x.P); }
+  }
+  const id=courses.some(c=>c.id===cid)?cid:null; cid=null; loadCourse(id);
+  buildClock(); applyFach(); render(); wakeUi(); view("home"); tick(); setInterval(tick,250);
+})();
+</script>
+</body>
+</html>
