@@ -161,10 +161,11 @@ summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:
 
 <section id="v-setup" class="card hidden">
   <h1 id="setupH">Neue Arbeit korrigieren</h1>
-  <p class="lbl"><b>Schritt 1: API-Key für Claude</b></p>
-  <p class="muted">Der Key bleibt nur in diesem Browser und wird nur an Anthropic gesendet.</p>
+  <p class="lbl"><b>Schritt 1: API-Key für Claude (optional)</b></p>
+  <p class="muted">Der Key bleibt nur in diesem Browser und wird nur an Anthropic gesendet. Ohne Key kannst du die Analyse über die Claude-App nutzen (Prompt kopieren, Antwort einfügen).</p>
   <div class="row"><input id="key" type="password" placeholder="sk-ant-…" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false"><button id="saveKey">Speichern</button><button class="ghost" id="delKey">Löschen</button></div>
   <p id="keyState" class="muted"></p>
+  <button class="ghost" id="skipKey">Ohne API-Key fortfahren</button>
   <div id="setupFields" class="hidden">
     <p class="lbl"><b>Schritt 2: Welches Fach korrigierst du?</b></p>
     <div class="seg" role="group" aria-label="Fach"><button id="sfr" type="button">Französisch</button><button id="ses" type="button">Spanisch</button></div>
@@ -238,6 +239,14 @@ summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:
         <button class="ghost hidden" id="goKey">API-Key eingeben</button>
       </div>
       <div id="out" class="hidden" aria-live="polite"></div>
+      <details id="manual">
+        <summary>Ohne API-Key: in der Claude-App analysieren</summary>
+        <p class="muted">1. Text oben eingeben und „Prompt kopieren" tippen. 2. Claude öffnen und den Prompt einfügen. 3. Die Antwort kopieren und hier einfügen.</p>
+        <div class="row"><button class="ghost" id="copyPrompt">Prompt kopieren</button><a href="https://claude.ai/new" target="_blank" rel="noopener" class="ghost" style="display:inline-flex;align-items:center;min-height:48px;padding:10px 20px;border:1.5px solid var(--accent);border-radius:12px;color:var(--accent);font-weight:600;text-decoration:none">Claude öffnen</a></div>
+        <textarea id="ans" placeholder="Antwort von Claude hier einfügen" style="margin-top:10px"></textarea>
+        <div class="row" style="margin-top:10px"><button id="ansBtn">Antwort übernehmen</button></div>
+        <p id="manMsg" class="muted"></p>
+      </details>
 
       
     </section>
@@ -366,17 +375,17 @@ function view(v){
   if(v==="setup") openSetup();
   window.scrollTo(0,0);
 }
-let pick="";
+let pick="", skip=false;
 function pickFach(f){ pick=f; $("sfr").classList.toggle("on",f==="Französisch"); $("ses").classList.toggle("on",f==="Spanisch"); }
 function keyState(){
   const k=!!store.get("kb_key");
   $("keyState").textContent = k ? "Key gespeichert ✓ (nur auf diesem Gerät)." : "Noch kein Key gespeichert.";
-  $("setupFields").classList.toggle("hidden", !k && mode!=="edit");
+  $("setupFields").classList.toggle("hidden", !k && mode!=="edit" && !skip);
 }
 function openSetup(){
   const ed=mode==="edit";
   $("setupH").textContent = ed ? "Angaben ändern" : "Neue Arbeit korrigieren";
-  $("jg").value=ed?jg:""; $("cname").value=ed?cname:""; $("total").value=ed?total:""; pickFach(ed?fach:""); $("startErr").textContent=""; keyState();
+  $("jg").value=ed?jg:""; $("cname").value=ed?cname:""; $("total").value=ed?total:""; pickFach(ed?fach:""); $("startErr").textContent=""; skip=false; keyState();
 }
 // Jahrgangsstufe vereinheitlichen: "9ER" -> "9er", "q1" -> "Q1", "E-Phase" -> "E", "Q-Phase" -> "Q"
 function normJg(v){
@@ -581,6 +590,7 @@ $("sfr").onclick=()=>pickFach("Französisch"); $("ses").onclick=()=>pickFach("Sp
 $("go").onclick=startApp;
 ["total","jg"].forEach(i=>$(i).addEventListener("keydown",e=>{ if(e.key==="Enter") startApp(); }));
 $("saveKey").onclick=()=>{ const k=$("key").value.trim(); if(k){ store.set("kb_key",k); $("key").value=""; } keyState(); };
+$("skipKey").onclick=()=>{ skip=true; keyState(); };
 $("delKey").onclick=()=>{ store.del("kb_key"); $("key").value=""; keyState(); };
 $("key").addEventListener("keydown",e=>{ if(e.key==="Enter") $("saveKey").click(); });
 $("bStart").onclick=()=>startT("a"); $("bStartS").onclick=()=>startT("s"); $("bStartI").onclick=()=>startT("i");
@@ -640,7 +650,7 @@ async function analyze(){
   if(!text){ $("txt").focus(); return; }
   const key=store.get("kb_key"); $("goKey").classList.toggle("hidden",!!key);
   out.classList.remove("hidden"); $("copy").classList.add("hidden");
-  if(!key){ out.innerHTML='<p class="err">Kein API-Key gespeichert. Bitte zuerst den Key eingeben.</p>'; return; }
+  if(!key){ out.innerHTML='<p class="err">Kein API-Key gespeichert. Gib einen Key ein oder nutze unten den Weg über die Claude-App.</p>'; $("manual").open=true; return; }
   out.innerHTML='<span class="spin"></span>Claude analysiert …'; $("ask").disabled=true;
   const ctl = new AbortController(); const to = setTimeout(()=>ctl.abort(), 60000);
   try{
@@ -668,6 +678,18 @@ async function analyze(){
   }finally{ clearTimeout(to); $("ask").disabled=false; }
 }
 $("ask").onclick=analyze;
+// Weg ohne API-Key: Prompt kopieren, in der Claude-App ausführen, Antwort einfügen
+$("copyPrompt").onclick=()=>{
+  const text=$("txt").value.trim(); if(!text){ $("txt").focus(); return; }
+  copyText(systemPrompt(fach)+"\n\nHier ist der Text zum Analysieren:\n"+text,$("copyPrompt"),"Prompt kopieren");
+};
+$("ansBtn").onclick=()=>{
+  const text=$("txt").value.trim(), a=$("ans").value.trim(), m=$("manMsg");
+  if(!text){ m.textContent="Bitte oben zuerst den analysierten Text eingeben."; return; }
+  if(!a){ m.textContent="Bitte die Antwort von Claude einfügen."; return; }
+  lastAnswer=a; $("out").classList.remove("hidden"); $("out").innerHTML=md(a); $("copy").classList.remove("hidden");
+  addErr(text,a); $("ans").value=""; m.textContent="Übernommen und in der Fehlerliste gesammelt ✓";
+};
 $("txt").addEventListener("keydown",e=>{ if(e.key==="Enter" && (e.ctrlKey||e.metaKey)){ e.preventDefault(); analyze(); } });
 $("copy").onclick=async()=>{
   try{ await navigator.clipboard.writeText(lastAnswer); }
@@ -738,7 +760,7 @@ function downloadDocx(){
     ["_rels/.rels",H+'<Relationships '+PR+'><Relationship Id="rId1" Type="'+R+'/officeDocument" Target="word/document.xml"/></Relationships>'],
     ["word/_rels/document.xml.rels",H+'<Relationships '+PR+'><Relationship Id="rId1" Type="'+R+'/styles" Target="styles.xml"/></Relationships>'],
     ["word/styles.xml",H+'<w:styles '+W+'><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/><w:sz w:val="22"/><w:lang w:val="de-DE"/></w:rPr></w:rPrDefault></w:docDefaults></w:styles>'],
-    ["word/document.xml",H+'<w:document '+W+'><w:body>'+body+'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>']
+    ["word/document.xml",H+'<w:document '+W+'><w:body>'+body+'<w:sectPr><w:pgSz w:w="16838" w:h="11906" w:orient="landscape"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>']
   ]);
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=docName();
   document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },4000);

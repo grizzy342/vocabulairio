@@ -10,8 +10,8 @@ Eine einzelne Webseite (`index.html`), die beim Korrigieren von Schülerarbeiten
 - **Oberstufe** (E, Q, Q1 bis Q4): getrennte Stoppuhren für sprachliche und inhaltliche Korrektur
 - **Uhren** (digital und analog) und Bildschirm bleibt an (wo der Browser es erlaubt)
 - **PONS-Wörterbuch** (Französisch oder Spanisch, je nach Kurs), öffnet in einem neuen Tab
-- **KI-Übersetzer und Fehleranalyse** mit Claude: Übersetzung, Fehler nach Grammatik, Lexik und Syntax, korrigierte Fassung
-- **Gesammelte typische Fehler** als Word-Datei, z. B. `9er Spa typische Fehler.docx`
+- **KI-Übersetzer und Fehleranalyse** mit Claude: Übersetzung, Fehler nach Grammatik, Lexik und Syntax, korrigierte Fassung. Mit API-Key direkt in der Seite, **ohne Key** über die Claude-App: Prompt kopieren, dort einfügen, Antwort zurück in die Seite einfügen
+- **Gesammelte typische Fehler** als Word-Datei im Querformat (A4), z. B. `9er Spa typische Fehler.docx`
 - **Arbeitszeiten** als Excel-Tabelle, z. B. `9er Spa Korrekturzeiten.xlsx`
 - **Datensicherung** als `.json`-Datei und **Code** zum Fortsetzen (z. B. `9erSpa28-12`)
 
@@ -30,7 +30,7 @@ Eine einzelne Webseite (`index.html`), die beim Korrigieren von Schülerarbeiten
 ## Erste Schritte
 
 1. Startseite → **Neue Arbeit korrigieren**.
-2. **Schritt 1:** Anthropic-API-Key eingeben (erstellbar in der Anthropic Console). Er wird nur im Browser des jeweiligen Geräts gespeichert und nur an Anthropic gesendet.
+2. **Schritt 1 (optional):** Anthropic-API-Key eingeben (erstellbar in der Claude Console, die API wird nach Verbrauch abgerechnet). Er wird nur im Browser des jeweiligen Geräts gespeichert und nur an Anthropic gesendet. Ohne Key geht „Ohne API-Key fortfahren".
 3. **Schritt 2:** Fach, Jahrgangsstufe (z. B. `9er`, `E`, `Q1`), optional einen Kursnamen und die Anzahl der Korrekturen eingeben.
 4. Start drücken, korrigieren, mit **Stopp** oder **Korrektur erledigt (ohne Zeit)** weiterzählen.
 
