@@ -5,6 +5,9 @@ Eine einzelne Webseite (`index.html`), die beim Korrigieren von Schülerarbeiten
 ## Funktionen
 
 - **Mehrere Kurse parallel** mit Fortschrittsbalken (x / y, Prozent), Motivationssprüchen, Meilensteinen und Konfetti bei 100 %
+- **Aufgaben pro Klausur:** Für jede Aufgabe gibt es einen eigenen Fortschrittsbalken. Du kannst eine Aufgabe als „komplett erledigt" anklicken, die aktive Aufgabe wechseln, und die Seite springt nach einer fertigen Aufgabe automatisch zur nächsten offenen.
+- **Rückgängig und Wiederherstellen** über zwei Buttons, auch über Aufgabenwechsel hinweg
+- **Logo** (Yin-Yang) oben links, ein Link zum GitHub-Repository dieser Seite
 - **Statusübersicht** (nur lesend): alle Kurse mit verbleibenden Korrekturen, Restzeit und Feierabend-Prognose
 - **Zeitmessung** nach dem Pomodoro-Prinzip mit Start, Pause und Stopp, Durchschnitt pro Korrektur, Pausen mit Augenpausen-Tipp
 - **Oberstufe** (E, Q, Q1 bis Q4): getrennte Stoppuhren für sprachliche und inhaltliche Korrektur
@@ -13,7 +16,7 @@ Eine einzelne Webseite (`index.html`), die beim Korrigieren von Schülerarbeiten
 - **KI-Übersetzer und Fehleranalyse** mit Claude: Übersetzung, Fehler nach Grammatik, Lexik und Syntax, korrigierte Fassung. Mit API-Key direkt in der Seite, **ohne Key** über die Claude-App: Prompt kopieren, dort einfügen, Antwort zurück in die Seite einfügen
 - **Gesammelte typische Fehler** als Word-Datei im Querformat (A4), z. B. `9er Spa typische Fehler.docx`
 - **Arbeitszeiten** als Excel-Tabelle, z. B. `9er Spa Korrekturzeiten.xlsx`
-- **Datensicherung** als `.json`-Datei und **Code** zum Fortsetzen (z. B. `9erSpa28-12`)
+- **Datensicherung** als `.json`-Datei und **Kurs-Code** (z. B. `9erSpa28`) zum Wiederfinden eines Kurses
 
 ## Auf GitHub Pages veröffentlichen
 
@@ -32,7 +35,8 @@ Eine einzelne Webseite (`index.html`), die beim Korrigieren von Schülerarbeiten
 1. Startseite → **Neue Arbeit korrigieren**.
 2. **Schritt 1 (optional):** Anthropic-API-Key eingeben (erstellbar in der Claude Console, die API wird nach Verbrauch abgerechnet). Er wird nur im Browser des jeweiligen Geräts gespeichert und nur an Anthropic gesendet. Ohne Key geht „Ohne API-Key fortfahren".
 3. **Schritt 2:** Fach, Jahrgangsstufe (z. B. `9er`, `E`, `Q1`), optional einen Kursnamen und die Anzahl der Korrekturen eingeben.
-4. Start drücken, korrigieren, mit **Stopp** oder **Korrektur erledigt (ohne Zeit)** weiterzählen.
+4. Bei „Wie viele Aufgaben hat eine Klausur?" die Aufgabenzahl eintragen (1 = keine Aufgaben-Aufteilung) und angeben, wie viele Aufgaben schon komplett korrigiert sind.
+5. **Start** drücken (der Button leuchtet grün und zeigt „Läuft …"), korrigieren, mit **Stopp** oder **Erledigt (ohne Zeit)** weiterzählen. Eine Korrektur zählt immer für die aktive Aufgabe.
 
 ## Daten und Datenschutz
 
@@ -40,7 +44,7 @@ Eine einzelne Webseite (`index.html`), die beim Korrigieren von Schülerarbeiten
 - Die Sätze, die du analysieren lässt, gehen an die Anthropic-API. Gib deshalb keine echten Schülernamen ein.
 - **Zwischen Geräten** übertragen geht auf zwei Wegen:
   - **Datensicherung:** auf der Startseite „Sicherung speichern" und auf dem anderen Gerät „Sicherung einlesen". Enthalten sind alle Kurse, Fehlerlisten und Zeiten, aber nicht der API-Key.
-  - **Code:** überträgt nur Jahrgangsstufe, Fach, Gesamtzahl und erledigte Korrekturen eines Kurses, nicht Zeiten und Fehlerliste.
+  - **Code:** Der Kurs-Code (z. B. `9erSpa28`) bleibt immer gleich und öffnet den Kurs mit seinem aktuellen Stand auf diesem Gerät. Auf einem anderen Gerät kennt er den Fortschritt nicht. Dafür gibt es den **Code mit Stand** (z. B. `9erSpa28-12`). Zeiten und Fehlerliste überträgt nur die Datensicherung.
 - Löschst du die Browserdaten oder nutzt den privaten Modus, sind die Daten weg. Mach daher ab und zu eine Sicherung.
 - Safari auf iPhone und iPad kann Daten von Seiten löschen, die etwa eine Woche nicht geöffnet wurden. Am besten die Seite über „Zum Home-Bildschirm" ablegen und regelmäßig sichern.
 
@@ -51,6 +55,7 @@ Am Anfang des Skripts in `index.html` stehen Konstanten:
 | Konstante | Bedeutung | Standard |
 |---|---|---|
 | `MODEL` | Claude-Modell für die Analyse | `claude-sonnet-5-5` |
+| `REPO_URL` | Ziel des Logo-Links; leer = wird aus der Pages-Adresse abgeleitet (`https://github.com/BENUTZER/REPOSITORY`) | leer |
 | `ARBEIT_MIN` | Arbeitsphase bis zur Pause | 25 |
 | `PAUSE_KURZ_MIN` | kurze Pause | 5 |
 | `PAUSE_LANG_MIN` | lange Pause | 15 |
@@ -64,8 +69,13 @@ Erscheint bei der Analyse die Meldung „Modell nicht gefunden", ist der Wert in
 
 - PONS lässt sich nicht in die Seite einbetten und öffnet deshalb immer in einem neuen Tab.
 - „Bildschirm bleibt an" nutzt die Wake-Lock-Funktion des Browsers. Wo sie fehlt, zeigt die Seite einen Hinweis auf die Systemeinstellung (iOS: Einstellungen → Anzeige & Helligkeit → Automatische Sperre → Nie).
+- Der Code mit Stand (z. B. `9erSpa28-12`) gilt nur für Kurse mit einer Aufgabe pro Klausur. Bei mehreren Aufgaben nutze die Datensicherung.
 - Die Seite braucht Internet für die KI-Analyse und für PONS. Zeitmessung, Fortschritt und Auswertungen funktionieren auch ohne.
 - Die Restzeit und die Feierabend-Prognose sind Schätzungen. Ohne eigene Messung rechnet die Seite mit Standardwerten und kennzeichnet das.
+
+## Logo
+
+Das Yin-Yang-Symbol oben links ist als einfaches SVG direkt im Code gezeichnet, es lädt also nichts von außen. Es verweist auf das GitHub-Repository der Seite. Wer die Seite lokal öffnet, landet auf `github.com`. Mit der Konstante `REPO_URL` lässt sich die Adresse fest eintragen.
 
 ## Lizenz
 

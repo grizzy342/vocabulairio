@@ -94,6 +94,19 @@ body[data-ober] .simple{display:none!important}
 .scard{border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0}
 .scard .bar{height:18px;margin:8px 0}.scard p{margin:.2em 0}
 #contList button{width:100%;text-align:left;margin-top:8px}
+.tmain{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:14px 0 10px}
+.tmain button{min-height:88px;font-size:1.45rem;border-radius:16px}
+.tmain .stop{background:var(--bad);border-color:var(--bad);color:#fff}
+.tsub{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.tsub button{flex:1 1 150px;min-height:48px;font-size:.95rem}
+.tmain button.run{background:var(--ok);border-color:var(--ok);color:#fff;transform:translateY(3px);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:inset 0 5px 12px rgba(0,0,0,.4),0 0 0 3px rgba(42,157,111,.5)}50%{box-shadow:inset 0 5px 12px rgba(0,0,0,.4),0 0 0 10px rgba(42,157,111,.08)}}
+@media (prefers-reduced-motion:reduce){.tmain button.run{animation:none;box-shadow:inset 0 5px 12px rgba(0,0,0,.4),0 0 0 4px rgba(42,157,111,.5)}}
+.trow{border:1.5px solid var(--line);border-radius:14px;padding:10px 14px;margin:8px 0;cursor:pointer}
+.trow.act{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.trow .bar{height:18px;margin:6px 0}
+#brand{display:inline-flex;align-items:center;gap:10px;min-height:48px;margin-bottom:8px;color:var(--ink);font-weight:700;font-size:1.1rem;text-decoration:none}
+#brand svg{width:40px;height:40px;flex:none}
 /* Start */
 #start{max-width:520px;margin:12vh auto 0;text-align:center}
 #start .row{justify-content:center;margin-top:14px}
@@ -121,6 +134,7 @@ summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:
 </head>
 <body>
 <main>
+<a id="brand" href="https://github.com" target="_blank" rel="noopener" aria-label="Zum GitHub-Repository dieser Seite (öffnet in neuem Tab)"><svg viewBox="-52 -52 104 104" aria-hidden="true"><circle r="50" fill="#fff" stroke="#111" stroke-width="2"/><path d="M0,-50A50,50 0 0 1 0,50A25,25 0 0 1 0,0A25,25 0 0 0 0,-50Z" fill="#111"/><circle cy="-25" r="7" fill="#111"/><circle cy="25" r="7" fill="#fff"/></svg><span>Korrektur-Begleiter</span></a>
 <header id="top">
   <div class="clk"><div id="dTime">--:--:--</div><div id="dDate" class="muted"></div></div>
   <svg id="ana" viewBox="-50 -50 100 100" role="img" aria-label="Analoguhr"><circle r="48" class="face"/><g id="ticks"></g><line id="hH" y2="-26" class="hh"/><line id="hM" y2="-38" class="hm"/><line id="hS" y2="-42" class="hs"/><circle r="2.5" class="hub"/></svg>
@@ -140,7 +154,7 @@ summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:
     <button class="path" id="pStatus"><b>📊 Statusübersicht</b><span>Nur ansehen: Fortschritt, verbleibende Korrekturen und Zeit.</span></button>
     <button class="path" id="pNew"><b>📝 Neue Arbeit korrigieren</b><span>API-Key, dann Fach, Jahrgangsstufe und Anzahl eingeben.</span></button>
     <div class="path card"><b>▶️ Bestehende Korrektur fortsetzen</b>
-      <div class="row"><input id="impS" type="text" placeholder="Code, z. B. 9erSpa28-12" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false"><button id="impSBtn">Weiter</button></div>
+      <div class="row"><input id="impS" type="text" placeholder="Code, z. B. 9erSpa28" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false"><button id="impSBtn">Weiter</button></div>
       <div id="contList"></div>
       <p id="impSErr" class="err"></p>
     </div>
@@ -176,6 +190,10 @@ summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:
     <input id="cname" type="text" placeholder="z. B. 9a" maxlength="30" autocomplete="off">
     <p class="lbl"><label for="total"><b>Wie viele Korrekturen gibt es insgesamt?</b></label></p>
     <input id="total" type="number" inputmode="numeric" min="1" step="1" placeholder="z. B. 28">
+    <p class="lbl"><label for="ntask"><b>Wie viele Aufgaben hat eine Klausur?</b></label></p>
+    <input id="ntask" type="number" inputmode="numeric" min="1" max="12" step="1" value="1">
+    <div id="ndoneRow"><p class="lbl"><label for="ndone"><b>Wie viele Aufgaben sind davon schon komplett korrigiert?</b></label></p>
+    <input id="ndone" type="number" inputmode="numeric" min="0" step="1" value="0"></div>
     <div class="row" style="margin-top:16px"><button id="go">Los geht's</button></div>
     <p id="startErr" class="err"></p>
   </div>
@@ -191,32 +209,37 @@ summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:
       <div id="banner" class="banner hidden" role="status" style="position:relative;background:var(--field);border:1px solid var(--line);border-left:5px solid var(--ok);border-radius:12px;padding:12px 52px 12px 16px;margin-bottom:14px">
         <button class="x" id="bannerX" aria-label="Hinweis schließen">✕</button><div id="bannerTxt"></div>
       </div>
-      <div class="big"><div class="count"><span id="x">0</span> / <span id="y">0</span> <span class="muted" style="font-weight:500;font-size:1rem">Korrekturen erledigt</span></div><div class="pct" id="pct">0 %</div></div>
+      <div class="big"><div class="count"><span id="x">0</span> / <span id="y">0</span> <span class="muted" id="xl" style="font-weight:500;font-size:1rem">Korrekturen erledigt</span></div><div class="pct" id="pct">0 %</div></div>
       <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar"><div class="fill" id="fill"></div></div>
       <p class="msg" id="msg"></p>
+      <div id="tasks" class="hidden"></div>
       <p id="rest" style="font-weight:600"></p>
       <p id="feier" style="font-weight:600"></p>
-      <div class="tctl">
-        <button id="bStart" class="simple">▶ Start</button>
-        <button id="bStartS" class="ober">▶ Sprachlich</button>
-        <button id="bStartI" class="ober">▶ Inhaltlich</button>
-        <button id="bPause" class="ghost">⏸ Pause</button>
-        <button id="bStop" class="ghost">⏹ <span class="simple">Stopp</span><span class="ober">Stopp: Korrektur fertig</span></button>
-        <button id="bSkip" class="ghost hidden">Pause überspringen</button>
+      <div class="tmain">
+        <button id="bStart" class="simple" aria-pressed="false">▶ Start</button>
+        <button id="bStartS" class="ober" aria-pressed="false">▶ Sprachlich</button>
+        <button id="bStartI" class="ober" aria-pressed="false">▶ Inhaltlich</button>
+        <button id="bStop" class="stop">⏹ <span class="simple">Stopp</span><span class="ober">Stopp: fertig</span></button>
       </div>
+      <div class="tsub"><button id="bPause" class="ghost">⏸ Pause</button><button id="plus" class="ghost">✓ Erledigt (ohne Zeit)</button><button id="bSkip" class="ghost hidden">Pause überspringen</button></div>
       <p id="pauseTip" class="muted hidden" style="font-weight:600"></p>
-      <div class="actions"><button class="done" id="plus">Korrektur erledigt ✓ (ohne Zeit)</button><button class="ghost" id="minus">Rückgängig</button></div>
+      <div class="tsub"><button id="minus" class="ghost">↩ Rückgängig</button><button id="redo" class="ghost">↪ Wiederherstellen</button></div>
       <div class="small"><button class="ghost" id="chg">Angaben ändern</button><button class="ghost" id="reset">Kurs löschen</button><button class="ghost" id="dlx" disabled>Zeiten als Excel-Tabelle</button><button class="ghost" id="home1">Zur Startseite</button></div>
       <details>
         <summary>Stand sichern oder übertragen</summary>
-        <p class="muted">Der Code enthält Jahrgangsstufe, Fach und Fortschritt, nicht aber Zeitmessungen. Auf einem anderen Gerät unter „Stand übernehmen" einfügen. Die gesammelte Fehlerliste wird nicht mit übertragen. Alles zusammen überträgt die Datensicherung auf der Startseite.</p>
+        <p class="muted">Der Kurs-Code bleibt immer gleich und findet den Kurs samt aktuellem Stand auf diesem Gerät. Auf einem anderen Gerät kennt er den Fortschritt nicht: dafür den Code mit Stand nutzen oder die Datensicherung auf der Startseite. Fehlerliste und Zeiten überträgt nur die Datensicherung.</p>
         <div class="row">
           <input id="code" type="text" readonly aria-label="Sicherungscode">
           <button id="copyCode">Code kopieren</button>
         </div>
+        <p class="muted" style="margin-top:14px">Code mit Stand (für ein anderes Gerät):</p>
+        <div class="row">
+          <input id="codeL" type="text" readonly aria-label="Code mit Stand" placeholder="Nur bei 1 Aufgabe pro Klausur">
+          <button class="ghost" id="copyCodeL">Code kopieren</button>
+        </div>
         <p class="muted" style="margin-top:14px">Stand von einem anderen Gerät übernehmen:</p>
         <div class="row">
-          <input id="impA" type="text" placeholder="Code, z. B. 9erSpa28-12" autocapitalize="characters" autocorrect="off" spellcheck="false">
+          <input id="impA" type="text" placeholder="Code, z. B. 9erSpa28" autocapitalize="characters" autocorrect="off" spellcheck="false">
           <button class="ghost" id="impABtn">Übernehmen</button>
         </div>
         <p id="impAErr" class="err"></p>
@@ -265,6 +288,12 @@ summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:
 // ===== Einstellungen (leicht änderbar) =====
 const MODEL = "claude-sonnet-5-5";
 const API_URL = "https://api.anthropic.com/v1/messages";
+const REPO_URL = "";   // optional: feste Adresse deines GitHub-Repositories; leer = wird aus der Pages-Adresse abgeleitet
+function repoUrl(){
+  if(REPO_URL) return REPO_URL;
+  const h=location.hostname, m=h.match(/^([^.]+)\.github\.io$/i), r=location.pathname.split("/")[1];
+  return m ? "https://github.com/"+m[1]+"/"+(r||h) : "https://github.com";
+}
 const ARBEIT_MIN = 25, PAUSE_KURZ_MIN = 5, PAUSE_LANG_MIN = 15, RUNDEN_BIS_LANGE_PAUSE = 4;  // Pomodoro
 const SCHAETZ_SEK1_MIN = 20, SCHAETZ_SPR_MIN = 25, SCHAETZ_INH_MIN = 20;                     // grobe Schätzung je Korrektur
 
@@ -274,7 +303,7 @@ const store = {
   del(k){ try{ localStorage.removeItem(k); }catch(e){} }
 };
 const $ = id => document.getElementById(id);
-let total=0, done=0, fach="", jg="", errs=[], courses=[], cid=null, cname="";   // Globale Variablen = aktiver Kurs
+let total=0, done=0, fach="", jg="", errs=[], courses=[], cid=null, cname="", tp=[0], ta=0, undoS=[], redoS=[];   // tp = erledigte Klausuren je Aufgabe, ta = aktive Aufgabe, done = tp[ta]   // Globale Variablen = aktiver Kurs
 const ABBR = {"Französisch":"Frz","Spanisch":"Spa"};
 const shown = {25:false,50:false,75:false,100:false};
 const newT = ()=>({log:[],cur:{a:0,s:0,i:0},run:null,t0:0});   // Zeitmessung (a = einfach, s/i = sprachlich/inhaltlich)
@@ -283,7 +312,8 @@ const TIPS=["👀 20-20-20: 20 Sekunden auf etwas schauen, das etwa 6 Meter entf
 let T=newT(), P=newP(), lastSave=0, mode="new", backTo="home";
 const hasSet = ()=> total>=1 && !!jg && !!fach;
 const isOber = g => /^(E|Q[1-4]?)$/.test(g);
-const code = ()=> jg+(ABBR[fach]||"")+total+"-"+done;
+const code = ()=> jg+(ABBR[fach]||"")+total;               // Kurs-Code, bleibt immer gleich, z. B. 9erSpa28
+const codeL = ()=> code()+"-"+done;                          // Code mit Stand für ein anderes Gerät, z. B. 9erSpa28-12
 const pad = n => String(n).padStart(2,"0");
 function fmt(ms){ const s=Math.round(ms/1000), h=Math.floor(s/3600), m=Math.floor(s%3600/60); return (h?h+":"+pad(m):pad(m))+":"+pad(s%60); }
 const f2 = ms => ms ? fmt(ms) : "–";
@@ -291,16 +321,20 @@ const avgL=(L,k)=>{ const a=L.filter(e=>e[k]>0); return a.length?a.reduce((x,e)=
 const avg=k=>avgL(T.log,k);
 const label=c=>c.name ? c.name+" ("+c.jg+" "+c.fach+")" : c.jg+" "+c.fach;
 const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-function curSync(){ const c=courses.find(x=>x.id===cid); if(c) Object.assign(c,{name:cname,jg,fach,total,done,errs,T}); }
+const remaining=c=>c.tp.reduce((a,x)=>a+Math.max(0,c.total-x),0);
+const progC=c=>({x:c.tp.reduce((a,v)=>a+v,0), y:c.total*c.tp.length});
+function ov(){ tp[ta]=done; return {x:tp.reduce((a,v)=>a+v,0), y:total*tp.length}; }
+const ovPct=()=>{ const o=ov(); return o.y?Math.round(o.x/o.y*100):0; };
+function curSync(){ const c=courses.find(x=>x.id===cid); if(c){ tp[ta]=done; Object.assign(c,{name:cname,jg,fach,total,done,errs,T,tp,ta}); } }
 // Solange ein Kurs keine eigene Messung hat: Durchschnitt aller Kurse gleicher Stufe (Oberstufe / Sek I)
 function pooled(k,o){ const L=[]; courses.forEach(c=>{ if(isOber(c.jg)===o && c.T && c.T.log) L.push(...c.T.log); }); return avgL(L,k); }
 function estC(c){
-  const z=c.total-c.done; if(z<=0) return {ms:0,rough:false};
+  const z=remaining(c); if(z<=0) return {ms:0,rough:false};
   const o=isOber(c.jg), L=(c.T&&c.T.log)||[], g=k=>avgL(L,k)||pooled(k,o);
   if(o) return {ms:z*((g("s")||SCHAETZ_SPR_MIN*6e4)+(g("i")||SCHAETZ_INH_MIN*6e4)), rough:!avgL(L,"s")||!avgL(L,"i")};
   return {ms:z*(g("a")||SCHAETZ_SEK1_MIN*6e4), rough:!avgL(L,"a")};
 }
-function est(){ curSync(); const c=courses.find(x=>x.id===cid); return c&&c.total>c.done ? estC(c) : null; }
+function est(){ curSync(); const c=courses.find(x=>x.id===cid); return c&&remaining(c)>0 ? estC(c) : null; }
 function dur(ms){ const m=Math.max(1,Math.round(ms/6e4)); return m>=60 ? Math.floor(m/60)+" Std. "+(m%60)+" Min." : m+" Min."; }
 function restFmt(e){
   const m=e.ms/6e4, c = m<15 ? "das ist kürzer als eine Kaffeepause ☕" : m<60 ? "weniger als eine Folge deiner Lieblingsserie 📺" : m<180 ? "ein entspannter Nachmittag, das schaffst du 🌤️" : "verteilt auf ein paar Etappen gut machbar 🧗";
@@ -310,7 +344,7 @@ const restText=()=>{ const e=est(); return e ? restFmt(e) : "Alles geschafft, ge
 // Feierabend-Prognose: jetzt + Restzeit aller Kurse + Pausen nach dem Pomodoro-Rhythmus
 function feierText(){
   curSync(); let ms=0, rough=false;
-  courses.forEach(c=>{ if(c.total>c.done){ const e=estC(c); ms+=e.ms; rough=rough||e.rough; } });
+  courses.forEach(c=>{ if(remaining(c)>0){ const e=estC(c); ms+=e.ms; rough=rough||e.rough; } });
   if(!ms) return "";
   const n=Date.now(), W=ARBEIT_MIN*6e4, brk=P.phase==="break", first=brk?W:P.left;
   let t=n+(brk?Math.max(0,P.end-n):0)+ms;
@@ -338,13 +372,14 @@ function persist(){ curSync(); lastSave=Date.now(); store.set("kb_data",JSON.str
 const save=persist, saveErrs=persist, saveT=persist;
 function resetShown(){ Object.keys(shown).forEach(k=>shown[k]=false); }
 function render(){
-  const p=total?Math.round(done/total*100):0;
-  $("x").textContent=done; $("y").textContent=total; $("pct").textContent=p+" %";
+  const o=ov(), p=o.y?Math.round(o.x/o.y*100):0;
+  $("x").textContent=o.x; $("y").textContent=o.y; $("pct").textContent=p+" %"; $("xl").textContent=tp.length>1?"Aufgaben-Korrekturen erledigt":"Korrekturen erledigt";
   $("fill").style.width=p+"%"; $("fill").style.backgroundColor=colorFor(p); $("bar").setAttribute("aria-valuenow",p);
   let q=quotes[0][1]; quotes.forEach(([t,s])=>{ if(p>=t) q=s; }); $("msg").textContent=q;
-  $("plus").disabled=done>=total; $("minus").disabled=done<=0; $("bStop").disabled=done>=total; $("dlx").disabled=!T.log.length;
-  $("rest").textContent=restText(); $("code").value=hasSet()?code():"";
-  curSync(); const sel=$("courseSel");
+  $("plus").disabled=done>=total; $("bStop").disabled=done>=total; $("minus").disabled=!undoS.length&&done<=0; $("redo").disabled=!redoS.length;
+  $("dlx").disabled=!T.log.length; $("rest").textContent=restText();
+  $("code").value=hasSet()?code():""; $("codeL").value=hasSet()&&tp.length===1?codeL():"";
+  curSync(); renderTasks(); const sel=$("courseSel");
   sel.innerHTML=courses.map(c=>'<option value="'+c.id+'">'+esc(label(c))+'</option>').join(""); sel.value=cid||""; sel.classList.toggle("hidden",courses.length<2);
   renderStatus(); renderHome(); renderErrs(); tiles();
 }
@@ -385,7 +420,7 @@ function keyState(){
 function openSetup(){
   const ed=mode==="edit";
   $("setupH").textContent = ed ? "Angaben ändern" : "Neue Arbeit korrigieren";
-  $("jg").value=ed?jg:""; $("cname").value=ed?cname:""; $("total").value=ed?total:""; pickFach(ed?fach:""); $("startErr").textContent=""; skip=false; keyState();
+  $("jg").value=ed?jg:""; $("cname").value=ed?cname:""; $("ntask").value=ed?tp.length:1; $("ndone").value=0; $("ndoneRow").classList.toggle("hidden",ed); $("total").value=ed?total:""; pickFach(ed?fach:""); $("startErr").textContent=""; skip=false; keyState();
 }
 // Jahrgangsstufe vereinheitlichen: "9ER" -> "9er", "q1" -> "Q1", "E-Phase" -> "E", "Q-Phase" -> "Q"
 function normJg(v){
@@ -406,35 +441,40 @@ function applyFach(){
 function loadCourse(id){
   if(cid && cid!==id){ fold(); T.run=null; curSync(); }   // laufende Zeitmessung des bisherigen Kurses anhalten
   const c=courses.find(x=>x.id===id); cid=c?c.id:null;
-  cname=c?c.name||"":""; jg=c?c.jg:""; fach=c?c.fach:""; total=c?c.total:0; done=c?c.done:0; errs=c?c.errs:[]; T=c?c.T:newT();
-  const p=total?Math.round(done/total*100):0; [25,50,75,100].forEach(k=>shown[k]=p>=k);
+  cname=c?c.name||"":""; jg=c?c.jg:""; fach=c?c.fach:""; total=c?c.total:0; tp=c?c.tp:[0]; ta=c?c.ta:0; done=tp[ta]; undoS=[]; redoS=[]; errs=c?c.errs:[]; T=c?c.T:newT();
+  const p=ovPct(); [25,50,75,100].forEach(k=>shown[k]=p>=k);
 }
 function openCourse(id){ loadCourse(id); persist(); applyFach(); render(); view("app"); }
 function startApp(){
-  const n=Number($("total").value), g=normJg($("jg").value), nm=$("cname").value.trim().slice(0,30), e=$("startErr");
+  const n=Number($("total").value), g=normJg($("jg").value), nm=$("cname").value.trim().slice(0,30), A=Number($("ntask").value||1), nd=Number($("ndone").value||0), e=$("startErr");
   if(!pick){ e.textContent="Bitte das Fach wählen."; return; }
   if(!g){ e.textContent="Bitte die Jahrgangsstufe eingeben, z. B. 9er, E oder Q1."; return; }
   if(!Number.isInteger(n)||n<1){ e.textContent="Bitte eine ganze Zahl ab 1 eingeben."; return; }
+  if(!Number.isInteger(A)||A<1||A>12){ e.textContent="Bitte eine Aufgabenzahl von 1 bis 12 eingeben."; return; }
+  if(mode==="new" && (!Number.isInteger(nd)||nd<0||nd>A)){ e.textContent="Die Zahl der schon komplett korrigierten Aufgaben muss zwischen 0 und "+A+" liegen."; return; }
   if(mode==="edit"){
     const reset=g!==jg||pick!==fach;
-    if(reset && (done>0||errs.length||T.log.length) && !confirm("Jahrgangsstufe oder Fach geändert: Fortschritt, Fehlerliste und Zeiten dieses Kurses werden zurückgesetzt. Fortfahren?")) return;
-    if(reset){ done=0; errs=[]; T=newT(); resetShown(); }
-    jg=g; fach=pick; total=n; cname=nm; if(done>total) done=total;
+    if(reset && (ov().x>0||errs.length||T.log.length) && !confirm("Jahrgangsstufe oder Fach geändert: Fortschritt, Fehlerliste und Zeiten dieses Kurses werden zurückgesetzt. Fortfahren?")) return;
+    tp[ta]=done;
+    if(reset){ errs=[]; T=newT(); resetShown(); tp=Array(A).fill(0); ta=0; }
+    else { tp=Array.from({length:A},(_,i)=>Math.min(tp[i]||0,n)); ta=Math.min(ta,A-1); }
+    jg=g; fach=pick; total=n; cname=nm; done=tp[ta]; undoS=[]; redoS=[];
   } else {
-    curSync(); const id=newId(); courses.push({id,name:nm,jg:g,fach:pick,total:n,done:0,errs:[],T:newT()}); loadCourse(id);
+    curSync(); const id=newId(), t2=Array.from({length:A},(_,i)=>i<nd?n:0), k=Math.max(0,t2.findIndex(x=>x<n));   // die ersten nd Aufgaben gelten als fertig
+    courses.push({id,name:nm,jg:g,fach:pick,total:n,done:t2[k],tp:t2,ta:k,errs:[],T:newT()}); loadCourse(id);
   }
   hideBanner(); persist(); applyFach(); render(); view("app");
 }
 function renderHome(){
   curSync();
-  $("contList").innerHTML=courses.map(c=>'<button class="ghost" data-id="'+c.id+'">'+esc(label(c))+" – "+c.done+" / "+c.total+'</button>').join("");
+  $("contList").innerHTML=courses.map(c=>'<button class="ghost" data-id="'+c.id+'">'+esc(label(c))+" – "+progC(c).x+" / "+progC(c).y+'</button>').join("");
 }
 function renderStatus(){
   curSync(); let X=0, Y=0;
   $("sNone").classList.toggle("hidden",courses.length>0); $("sBody").classList.toggle("hidden",!courses.length);
   $("sList").innerHTML=courses.map(c=>{
-    X+=c.done; Y+=c.total; const p=Math.round(c.done/c.total*100), z=c.total-c.done, e=estC(c);
-    return '<div class="scard"><div class="big"><b>'+esc(label(c))+(c.id===cid?" (aktiv)":"")+'</b><b>'+c.done+" / "+c.total+" · "+p+' %</b></div><div class="bar"><div class="fill" style="width:'+p+'%;background-color:'+colorFor(p)+'"></div></div><p class="muted">'
+    const g=progC(c); X+=g.x; Y+=g.y; const p=Math.round(g.x/g.y*100), z=remaining(c), e=estC(c);
+    return '<div class="scard"><div class="big"><b>'+esc(label(c))+(c.id===cid?" (aktiv)":"")+(c.tp.length>1?" · "+c.tp.length+" Aufgaben":"")+'</b><b>'+g.x+" / "+g.y+" · "+p+' %</b></div><div class="bar"><div class="fill" style="width:'+p+'%;background-color:'+colorFor(p)+'"></div></div>'+(c.tp.length>1?'<p class="muted">'+c.tp.map((x,i)=>"A"+(i+1)+" "+x+"/"+c.total).join(" · ")+'</p>':'')+'<p class="muted">'
       +(z>0?"Noch "+z+(z===1?" Korrektur":" Korrekturen")+", ca. "+dur(e.ms)+(e.rough?" (grobe Schätzung)":""):"Alle Korrekturen erledigt 🎉")+'</p></div>';
   }).join("");
   $("sSum").textContent = Y-X>0 ? "Alle Kurse: noch "+(Y-X)+" von "+Y+" Korrekturen offen." : courses.length ? "Alle Kurse sind komplett erledigt! 🎉" : "";
@@ -446,8 +486,9 @@ function cleanCourse(c,keep){
   if(!c||typeof c!=="object") return null;
   const g=normJg(c.jg||""), f=c.fach, t=+c.total, d=+c.done, num=x=>typeof x==="number"&&isFinite(x)&&x>=0?x:0;
   if(!g||!ABBR[f]||!Number.isInteger(t)||t<1||!Number.isInteger(d)||d<0||d>t) return null;
-  const o=keep&&c.T?c.T:{}, log=(c.T&&Array.isArray(c.T.log)?c.T.log:[]).filter(e=>e&&typeof e==="object").map(e=>({n:num(e.n),a:num(e.a),s:num(e.s),i:num(e.i)}));
-  return {id:String(c.id||newId()).slice(0,40), name:String(c.name||"").slice(0,30), jg:g, fach:f, total:t, done:d,
+  const tp=(Array.isArray(c.tp)&&c.tp.length&&c.tp.length<=12)?c.tp.map(x=>Number.isInteger(x)&&x>=0&&x<=t?x:0):[d], ta=Number.isInteger(c.ta)&&c.ta>=0&&c.ta<tp.length?c.ta:0;
+  const o=keep&&c.T?c.T:{}, log=(c.T&&Array.isArray(c.T.log)?c.T.log:[]).filter(e=>e&&typeof e==="object").map(e=>({n:num(e.n),k:num(e.k),a:num(e.a),s:num(e.s),i:num(e.i)}));
+  return {id:String(c.id||newId()).slice(0,40), name:String(c.name||"").slice(0,30), jg:g, fach:f, total:t, done:tp[ta], tp, ta,
     errs:(Array.isArray(c.errs)?c.errs:[]).filter(e=>e&&typeof e.t==="string"&&typeof e.a==="string").map(e=>({t:e.t,a:e.a})),
     T:Object.assign(newT(),{log,cur:Object.assign({a:0,s:0,i:0},o.cur),run:["a","s","i"].includes(o.run)?o.run:null,t0:+o.t0||0})};
 }
@@ -520,22 +561,57 @@ function tiles(){
   $("tPl").textContent = brk ? (P.long?"Lange Pause ☕":"Pause ☕") : "Bis zur nächsten Pause";
   $("tPom").textContent = fmt(brk ? Math.max(0,P.end-n) : P.left);
   $("tcur").classList.toggle("run",!!T.run); $("tpom").classList.toggle("brk",brk);
-  [["bStart","a"],["bStartS","s"],["bStartI","i"]].forEach(([id,k])=>{ $(id).classList.toggle("run",T.run===k); $(id).disabled=brk||fin; });
+  [["bStart","a","Start"],["bStartS","s","Sprachlich"],["bStartI","i","Inhaltlich"]].forEach(([id,k,l])=>{
+    const r=T.run===k; $(id).classList.toggle("run",r); $(id).setAttribute("aria-pressed",r); $(id).disabled=brk||fin;
+    $(id).textContent = r ? "● "+(k==="a"?"Läuft …":l+" läuft …") : "▶ "+l;
+  });
   $("bPause").disabled=!T.run; $("feier").textContent=$("sFeier").textContent=feierText(); $("pauseTip").classList.toggle("hidden",!brk); $("pauseTip").textContent=P.tip||""; $("bSkip").classList.toggle("hidden",!brk);
 }
 function startT(k){ if(P.phase==="break") return; fold(); T.run=k; T.t0=Date.now(); saveT(); tiles(); }
 function pauseT(){ fold(); T.run=null; saveT(); tiles(); }
 function stopT(){
   if(done>=total) return; fold(); const c=T.cur;
-  if(c.a>0||c.s>0||c.i>0) T.log.push(isOber(jg) ? {n:done+1,s:c.s,i:c.i} : {n:done+1,a:c.a});
-  T.run=null; T.cur={a:0,s:0,i:0}; count(1);
+  let en=null;
+  if(c.a>0||c.s>0||c.i>0){ en=isOber(jg) ? {n:done+1,k:ta+1,s:c.s,i:c.i} : {n:done+1,k:ta+1,a:c.a}; T.log.push(en); }
+  T.run=null; T.cur={a:0,s:0,i:0}; inc(en);
 }
-function count(d){
-  if(d>0 && done<total) done++;
-  else if(d<0 && done>0){ const l=T.log[T.log.length-1]; if(l&&l.n===done) T.log.pop(); done--; }
-  else return;
-  save(); saveT(); render(); milestone(Math.round(done/total*100));
+// ===== Zählen: jede Korrektur gehört zur aktiven Aufgabe; Rückgängig und Wiederherstellen über zwei Stapel =====
+function gotoTask(k){ if(k!==ta && k<tp.length){ tp[ta]=done; ta=k; done=tp[ta]; } }
+function after(){ tp[ta]=done; save(); render(); milestone(ovPct()); }
+function inc(entry){
+  if(done>=total) return;
+  done++; tp[ta]=done; undoS.push({k:ta,log:entry||null}); redoS=[];
+  advance(); after();
 }
+// Ist die aktive Aufgabe komplett, automatisch zur nächsten offenen Aufgabe wechseln
+function advance(){
+  if(done<total) return;
+  const nx=tp.findIndex((x,i)=>i!==ta&&x<total), old=ta+1;
+  if(nx>=0){ gotoTask(nx); toast("Aufgabe "+old+" fertig, weiter mit Aufgabe "+(nx+1)+" 👉"); }
+}
+function undo(){
+  let r=undoS.pop();
+  if(!r){ if(done<=0) return; const l=T.log[T.log.length-1]; r={k:ta,log:(l&&l.n===done&&(l.k||1)===ta+1)?l:null}; }   // nach Neuladen: letzte Korrektur der aktiven Aufgabe
+  gotoTask(r.k); if(done<=0) return;
+  done--; if(r.log){ const i=T.log.indexOf(r.log); if(i>=0) T.log.splice(i,1); }
+  redoS.push(r); after();
+}
+function redo(){
+  const r=redoS.pop(); if(!r) return; gotoTask(r.k); if(done>=total) return;
+  done++; tp[ta]=done; if(r.log) T.log.push(r.log); undoS.push(r); advance(); after();
+}
+function renderTasks(){
+  const el=$("tasks"); el.classList.toggle("hidden",tp.length<2); if(tp.length<2) return;
+  el.innerHTML=tp.map((x,k)=>{ const p=total?Math.round(x/total*100):0, full=x>=total;
+    return '<div class="trow'+(k===ta?' act':'')+'" data-k="'+k+'"><div class="big"><b>Aufgabe '+(k+1)+(k===ta?' · aktiv':'')+'</b><span>'+x+" / "+total+" · "+p+' %</span></div><div class="bar"><div class="fill" style="width:'+p+'%;background-color:'+colorFor(p)+'"></div></div><button class="ghost sm" data-done="'+k+'">'+(full?"↩ wieder öffnen":"✓ Aufgabe "+(k+1)+" komplett erledigt")+'</button></div>'; }).join("");
+}
+function setActive(k){ if(k===ta||k>=tp.length) return; fold(); T.run=null; gotoTask(k); persist(); render(); }
+function toggleTask(k){
+  tp[ta]=done;
+  if(tp[k]>=total){ if(!confirm("Aufgabe "+(k+1)+" wieder auf 0 Korrekturen setzen?")) return; tp[k]=0; } else tp[k]=total;
+  done=tp[ta]; undoS=[]; redoS=[]; advance(); persist(); render(); milestone(ovPct());
+}
+$("tasks").onclick=e=>{ const b=e.target.closest("[data-done]"); if(b){ toggleTask(+b.dataset.done); return; } const r=e.target.closest(".trow"); if(r) setActive(+r.dataset.k); };
 
 // ===== Bildschirm wach halten =====
 let wl=null, wakeOn=store.get("kb_wake")!=="0", wakeFail=false;
@@ -561,22 +637,26 @@ function copyText(t,btn,label){
 }
 function hideBanner(){ $("banner").classList.add("hidden"); }
 function showBanner(){
-  const z=total-done;
-  let h="<p>"+(z>0 ? (z===1?"Es muss nur noch <b>1</b> Korrektur gemacht werden":"Es müssen nur noch <b>"+z+"</b> Korrekturen gemacht werden")+" ("+total+" − "+done+" = "+z+")." : "Alle Korrekturen sind erledigt! 🎉")+"</p>";
+  const o=ov(), z=o.y-o.x;
+  let h="<p>"+(z>0 ? (z===1?"Es muss nur noch <b>1</b> Korrektur gemacht werden":"Es müssen nur noch <b>"+z+"</b> Korrekturen gemacht werden")+" ("+o.y+" − "+o.x+" = "+z+")." : "Alle Korrekturen sind erledigt! 🎉")+"</p>";
   if(z>=10) h+="<p>Du musst nicht alles korrigieren, du kannst auch nur 3 bis 5 Korrekturen erledigen. 💪😊🌟</p>";
   else if(z>0){ h+="<p>Auf geht's! Endspurt! 🏁🔥💪</p>"; if(z<5) h+="<p>Korrigiere alles in einem Rutsch fertig! 🚀🎉💥</p>"; }
   if(z>0) h+="<p>"+restText()+"</p>";
   $("bannerTxt").innerHTML=h; $("banner").classList.remove("hidden");
 }
+// Kurs-Code (9erSpa28) öffnet den Kurs mit seinem Stand auf diesem Gerät; Code mit Stand (9erSpa28-12) setzt zusätzlich den Fortschritt
 function importCode(inputId,errId){
-  const m=$(inputId).value.trim().match(/^(.+?)(Frz|Spa)(\d+)-(\d+)$/i), g=m?normJg(m[1]):"", t=m?+m[3]:0, d=m?+m[4]:0;
-  if(!m||!g||t<1||d>t){ $(errId).textContent="Der Code ist ungültig. Beispiele: 9erSpa28-12 oder EFrz26-10"; return; }
+  const m=$(inputId).value.trim().match(/^(.+?)(Frz|Spa)(\d+)(?:-(\d+))?$/i), g=m?normJg(m[1]):"", t=m?+m[3]:0, d=m&&m[4]!==undefined?+m[4]:null;
+  if(!m||!g||t<1||(d!==null&&d>t)){ $(errId).textContent="Der Code ist ungültig. Beispiele: 9erSpa28 oder EFrz26"; return; }
   const f=/^frz$/i.test(m[2])?"Französisch":"Spanisch";
-  curSync();   // gleicher Kurs (Jahrgang, Fach, Anzahl) wird aktualisiert, sonst als neuer Kurs angelegt
-  let c=courses.find(x=>x.jg===g&&x.fach===f&&x.total===t);
-  if(!c){ c={id:newId(),name:"",jg:g,fach:f,total:t,done:d,errs:[],T:newT()}; courses.push(c); }
-  c.done=d; $(errId).textContent=""; $(inputId).value="";
-  loadCourse(c.id); persist(); applyFach(); render(); view("app"); showBanner(); toast("Stand übernommen ✓");
+  curSync();   // gleicher Kurs (Jahrgang, Fach, Anzahl) wird geöffnet, sonst als neuer Kurs angelegt
+  let c=courses.find(x=>x.jg===g&&x.fach===f&&x.total===t), fresh=false;
+  if(!c){ c={id:newId(),name:"",jg:g,fach:f,total:t,done:0,tp:[0],ta:0,errs:[],T:newT()}; courses.push(c); fresh=true; }
+  if(d!==null && c.tp.length===1){ c.tp[0]=d; c.done=d; }   // Code mit Stand gilt nur bei einer Aufgabe pro Klausur
+  $(errId).textContent=""; $(inputId).value="";
+  loadCourse(c.id); persist(); applyFach(); render(); view("app");
+  if(fresh&&d===null){ $("bannerTxt").innerHTML="<p>Neuer Kurs angelegt, der Fortschritt steht bei 0 von "+t+". Für diesen Code ist auf diesem Gerät noch kein Stand gespeichert. Den Stand überträgst du mit dem Code mit Stand (z. B. "+code()+"-12) oder mit der Datensicherung.</p>"; $("banner").classList.remove("hidden"); }
+  else { showBanner(); toast("Stand übernommen ✓"); }
 }
 
 // ===== Bedienung =====
@@ -596,9 +676,10 @@ $("key").addEventListener("keydown",e=>{ if(e.key==="Enter") $("saveKey").click(
 $("bStart").onclick=()=>startT("a"); $("bStartS").onclick=()=>startT("s"); $("bStartI").onclick=()=>startT("i");
 $("bPause").onclick=pauseT; $("bStop").onclick=stopT;
 $("bSkip").onclick=()=>{ P.phase="work"; P.left=ARBEIT_MIN*6e4; saveT(); tiles(); };
-$("plus").onclick=()=>count(1); $("minus").onclick=()=>count(-1);
+$("plus").onclick=()=>inc(null); $("minus").onclick=undo; $("redo").onclick=redo;
 $("bannerX").onclick=hideBanner;
 $("copyCode").onclick=()=>copyText($("code").value,$("copyCode"),"Code kopieren");
+$("copyCodeL").onclick=()=>copyText($("codeL").value,$("copyCodeL"),"Code kopieren");
 $("impABtn").onclick=()=>importCode("impA","impAErr"); $("impSBtn").onclick=()=>importCode("impS","impSErr");
 $("impA").addEventListener("keydown",e=>{ if(e.key==="Enter") importCode("impA","impAErr"); });
 $("impS").addEventListener("keydown",e=>{ if(e.key==="Enter") importCode("impS","impSErr"); });
@@ -712,7 +793,7 @@ function renderErrs(){
     b.onclick=()=>{ errs.splice(i,1); saveErrs(); renderErrs(); };
     li.append(sp,b); ul.appendChild(li);
   });
-  const full = total>0 && done>=total;
+  const o=ov(), full=o.y>0 && o.x>=o.y;
   $("errCount").textContent=errs.length;
   $("dl").disabled = !(full && errs.length);
   $("dlHint").textContent = !errs.length ? "Jede Analyse wird hier automatisch gesammelt." :
@@ -751,7 +832,7 @@ function answerParas(a){
 }
 function downloadDocx(){
   let body=para(run("Typische Fehler – "+jg+" "+fach,{b:1,sz:36}),{after:120})
-    +para(run(done+" von "+total+" Korrekturen erledigt, erstellt am "+new Date().toLocaleDateString("de-DE")),{after:240});
+    +para(run(ov().x+" von "+ov().y+" Korrekturen erledigt, erstellt am "+new Date().toLocaleDateString("de-DE")),{after:240});
   errs.forEach((e,i)=>{ body+=para(run((i+1)+". "+e.t,{b:1,sz:26}),{before:240,after:80})+answerParas(e.a); });
   const W='xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"', H='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
   const R="http://schemas.openxmlformats.org/officeDocument/2006/relationships", PR='xmlns="http://schemas.openxmlformats.org/package/2006/relationships"';
@@ -771,12 +852,13 @@ $("dl").onclick=downloadDocx;
 function downloadXlsx(){
   const o=isOber(jg), L=T.log, D=864e5;
   const S=(v,s)=>({v,s,str:1}), N=(v,s,f)=>({v,s,f});
+  const idc=e=>tp.length>1&&e.k ? S("Aufgabe "+e.k+", Nr. "+e.n,0) : N(e.n,0);
   const nSum=o?6:2, hdr=6+nSum, f1=hdr+1, l1=hdr+L.length, rg=c=>c+f1+":"+c+l1;
   const tot=k=>L.reduce((x,e)=>x+(e[k]||0),0)/D;
   const av=k=>{ const a=L.filter(e=>e[k]>0); return a.length?a.reduce((x,e)=>x+e[k],0)/a.length/D:0; };
   const avT=L.length?(tot("s")+tot("i"))/L.length:0;
   const rows=[[S("Korrekturzeiten – "+jg+" "+fach,2)],
-    [S(done+" von "+total+" Korrekturen erledigt, davon "+L.length+" mit Zeitmessung. Stand: "+new Date().toLocaleDateString("de-DE"),0)],[],[S("Zusammenfassung",1)]];
+    [S(ov().x+" von "+ov().y+" Korrekturen erledigt, davon "+L.length+" mit Zeitmessung. Stand: "+new Date().toLocaleDateString("de-DE"),0)],[],[S("Zusammenfassung",1)]];
   if(o) rows.push(
     [S("Gesamtzeit sprachlich",0),N(tot("s"),4,"SUM("+rg("B")+")")],
     [S("Gesamtzeit inhaltlich",0),N(tot("i"),4,"SUM("+rg("C")+")")],
@@ -789,7 +871,7 @@ function downloadXlsx(){
     [S("Ø pro Korrektur",1),N(av("a"),5,'AVERAGEIF('+rg("B")+',">0")')]);
   rows.push([], o ? [S("Korrektur Nr.",3),S("Sprachlich (h:mm:ss)",3),S("Inhaltlich (h:mm:ss)",3),S("Gesamt (h:mm:ss)",3)] : [S("Korrektur Nr.",3),S("Zeit (h:mm:ss)",3)]);
   L.forEach((e,i)=>{ const r=f1+i;
-    rows.push(o ? [N(e.n,0),N((e.s||0)/D,4),N((e.i||0)/D,4),N(((e.s||0)+(e.i||0))/D,4,"B"+r+"+C"+r)] : [N(e.n,0),N((e.a||0)/D,4)]); });
+    rows.push(o ? [idc(e),N((e.s||0)/D,4),N((e.i||0)/D,4),N(((e.s||0)+(e.i||0))/D,4,"B"+r+"+C"+r)] : [idc(e),N((e.a||0)/D,4)]); });
   const cell=(ref,c)=>c.str ? '<c r="'+ref+'" s="'+c.s+'" t="inlineStr"><is><t xml:space="preserve">'+xe(c.v)+'</t></is></c>'
     : '<c r="'+ref+'" s="'+c.s+'">'+(c.f?'<f>'+xe(c.f)+'</f>':'')+'<v>'+c.v+'</v></c>';
   const sheet=rows.map((r,ri)=>'<row r="'+(ri+1)+'">'+r.map((c,ci)=>cell("ABCD"[ci]+(ri+1),c)).join("")+'</row>').join("");
@@ -822,7 +904,7 @@ $("dlx").onclick=downloadXlsx;
     if(c){ courses=[c]; cid=c.id; if(x.P) P=Object.assign(newP(),x.P); }
   }
   const id=courses.some(c=>c.id===cid)?cid:null; cid=null; loadCourse(id);
-  buildClock(); applyFach(); render(); wakeUi(); view("home"); tick(); setInterval(tick,250);
+  $("brand").href=repoUrl(); buildClock(); applyFach(); render(); wakeUi(); view("home"); tick(); setInterval(tick,250);
 })();
 </script>
 </body>
