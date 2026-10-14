@@ -6,6 +6,7 @@ Eine einzelne Webseite (`index.html`), die beim Korrigieren von Schülerarbeiten
 
 - **Mehrere Kurse parallel** mit Fortschrittsbalken (x / y, Prozent), Motivationssprüchen, Meilensteinen und Konfetti bei 100 %
 - **Aufgaben pro Klausur:** Für jede Aufgabe gibt es einen eigenen Fortschrittsbalken. Du kannst eine Aufgabe als „komplett erledigt" anklicken, die aktive Aufgabe wechseln, und die Seite springt nach einer fertigen Aufgabe automatisch zur nächsten offenen.
+- **Notentabellen** als Einblendung auf der Seite (kein neues Fenster): bei Oberstufen-Kursen die Notenpunkte 15 bis 0 mit Note und Prozent (KMK-Skala, wie auf Wikipedia unter „Abitur in Hessen“), bei Sek-I-Kursen die Noten 1 bis 6 mit Prozentbereichen. Beide Tabellen lassen sich auch auf der Startseite einblenden. Schließen mit ✕, Klick auf den Rand oder Esc.
 - **Rückgängig und Wiederherstellen** über zwei Buttons, auch über Aufgabenwechsel hinweg
 - **Logo** (Yin-Yang) oben links, ein Link zum GitHub-Repository dieser Seite
 - **Statusübersicht** (nur lesend): alle Kurse mit verbleibenden Korrekturen, Restzeit und Feierabend-Prognose

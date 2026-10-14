@@ -107,6 +107,16 @@ body[data-ober] .simple{display:none!important}
 .trow .bar{height:18px;margin:6px 0}
 #brand{display:inline-flex;align-items:center;gap:10px;min-height:48px;margin-bottom:8px;color:var(--ink);font-weight:700;font-size:1.1rem;text-decoration:none}
 #brand svg{width:40px;height:40px;flex:none}
+.ov{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center}
+.ovbox{position:relative;width:80vw;max-width:900px;max-height:80vh;display:flex;flex-direction:column;background:var(--card);color:var(--ink);border-radius:18px;padding:18px 18px 14px;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+.ovbox h2{margin:0 48px 8px 0}
+.ovbox .x{position:absolute;top:6px;right:6px;min-width:44px;min-height:44px;padding:0;border:0;background:transparent;color:var(--muted);font-size:1.4rem}
+.ovscroll{overflow:auto;flex:1 1 auto}
+.ovscroll table{width:100%;border-collapse:collapse}
+.ovscroll th,.ovscroll td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--line)}
+.ovscroll th{position:sticky;top:0;background:var(--card);font-size:.85rem;color:var(--muted)}
+.ovscroll tr.low td{color:var(--bad)}
+.ovbox .muted{margin:8px 0 0;font-size:.85rem}
 /* Start */
 #start{max-width:520px;margin:12vh auto 0;text-align:center}
 #start .row{justify-content:center;margin-top:14px}
@@ -158,6 +168,10 @@ summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:
       <div id="contList"></div>
       <p id="impSErr" class="err"></p>
     </div>
+  </div>
+  <div class="card" style="margin-top:16px"><b>📋 Notentabellen</b>
+    <p class="muted">Prozente und Noten zum Nachschauen.</p>
+    <div class="row"><button class="ghost" id="gradeHomeS">Sek I einblenden</button><button class="ghost" id="gradeHomeO">Oberstufe (Notenpunkte) einblenden</button></div>
   </div>
   <div class="card" style="margin-top:16px"><b>💾 Datensicherung</b>
     <p class="muted">Alle Kurse mit Fortschritt, Fehlerlisten und Zeiten als Datei (.json) speichern oder auf einem anderen Gerät einlesen. Der API-Key ist nicht enthalten.</p>
@@ -224,7 +238,7 @@ summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:
       <div class="tsub"><button id="bPause" class="ghost">⏸ Pause</button><button id="plus" class="ghost">✓ Erledigt (ohne Zeit)</button><button id="bSkip" class="ghost hidden">Pause überspringen</button></div>
       <p id="pauseTip" class="muted hidden" style="font-weight:600"></p>
       <div class="tsub"><button id="minus" class="ghost">↩ Rückgängig</button><button id="redo" class="ghost">↪ Wiederherstellen</button></div>
-      <div class="small"><button class="ghost" id="chg">Angaben ändern</button><button class="ghost" id="reset">Kurs löschen</button><button class="ghost" id="dlx" disabled>Zeiten als Excel-Tabelle</button><button class="ghost" id="home1">Zur Startseite</button></div>
+      <div class="small"><button class="ghost ober" id="gradeOpen">Notenpunkte einblenden</button><button class="ghost simple" id="gradeOpenS">Notentabelle einblenden</button><button class="ghost" id="chg">Angaben ändern</button><button class="ghost" id="reset">Kurs löschen</button><button class="ghost" id="dlx" disabled>Zeiten als Excel-Tabelle</button><button class="ghost" id="home1">Zur Startseite</button></div>
       <details>
         <summary>Stand sichern oder übertragen</summary>
         <p class="muted">Der Kurs-Code bleibt immer gleich und findet den Kurs samt aktuellem Stand auf diesem Gerät. Auf einem anderen Gerät kennt er den Fortschritt nicht: dafür den Code mit Stand nutzen oder die Datensicherung auf der Startseite. Fehlerliste und Zeiten überträgt nur die Datensicherung.</p>
@@ -283,6 +297,16 @@ summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:
   </div>
 </div>
 </main>
+
+<div id="gradeOv" class="ov hidden" role="dialog" aria-modal="true" aria-labelledby="gradeT">
+  <div class="ovbox">
+    <button class="x" id="gradeX" aria-label="Schließen">✕</button>
+    <h2 id="gradeT"></h2>
+    <div class="ovscroll"><table><thead id="gradeHead"></thead><tbody id="gradeBody"></tbody></table></div>
+    <p class="muted" id="gradeNote"></p>
+    <p class="muted" id="gradeSrc"></p>
+  </div>
+</div>
 
 <script>
 // ===== Einstellungen (leicht änderbar) =====
@@ -892,6 +916,37 @@ function downloadXlsx(){
   document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },4000);
 }
 $("dlx").onclick=downloadXlsx;
+
+// ===== Tabelle Notenpunkte und Prozente (nur Oberstufe, als Einblendung auf der Seite) =====
+const NOTEN=[[15,"1+","sehr gut",95],[14,"1","sehr gut",90],[13,"1−","sehr gut",85],[12,"2+","gut",80],[11,"2","gut",75],[10,"2−","gut",70],[9,"3+","befriedigend",65],[8,"3","befriedigend",60],[7,"3−","befriedigend",55],[6,"4+","ausreichend",50],[5,"4","ausreichend",45],[4,"4−","schwach ausreichend",40],[3,"5+","mangelhaft",33],[2,"5","mangelhaft",27],[1,"5−","mangelhaft",20],[0,"6","ungenügend",null]];
+const SEK1=[["1","sehr gut","100 – 90 %"],["2","gut","89 – 76 %"],["3","befriedigend","75 – 62 %"],["4","ausreichend","61 – 48 %"],["5","mangelhaft","47 – 20 %"],["6","ungenügend","19 – 0 %"]];
+let gradeFrom=null;
+function gradeShow(kind,from){
+  const ov=$("gradeOv");
+  if(!kind){ ov.classList.add("hidden"); document.body.style.overflow=""; if(gradeFrom) gradeFrom.focus(); gradeFrom=null; return; }
+  gradeFrom=from||null;
+  if(kind==="ober"){
+    $("gradeT").textContent="Notenpunkte und Prozente (Oberstufe)";
+    $("gradeHead").innerHTML="<tr><th>Punkte</th><th>Note</th><th>Note in Worten</th><th>Rohpunkte (ab … %)</th></tr>";
+    $("gradeBody").innerHTML=NOTEN.map(r=>'<tr'+(r[0]<=4?' class="low"':'')+'><td><b>'+r[0]+'</b></td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+(r[3]===null?"unter 20 %":r[3]+" %")+'</td></tr>').join("");
+    $("gradeNote").textContent="4 Punkte („schwach ausreichend“) liegen im defizitären Bereich. Ein Kurs mit weniger als 5 Punkten gilt als unterbelegt. Umrechnung: Note = (17 − Punkte) / 3.";
+    $("gradeSrc").textContent="Quelle: Wikipedia, „Abitur in Hessen“, Abschnitt Leistungsbewertung.";
+  } else {
+    $("gradeT").textContent="Noten und Prozente (Sekundarstufe I)";
+    $("gradeHead").innerHTML="<tr><th>Note</th><th>Note in Worten</th><th>Erreichte Prozente</th></tr>";
+    $("gradeBody").innerHTML=SEK1.map(r=>'<tr'+(+r[0]>=5?' class="low"':'')+'><td><b>'+r[0]+'</b></td><td>'+r[1]+'</td><td>'+r[2]+'</td></tr>').join("");
+    $("gradeNote").textContent="Prozente der erreichten Punkte je Note.";
+    $("gradeSrc").textContent="";
+  }
+  ov.classList.remove("hidden"); document.body.style.overflow="hidden"; $("gradeX").focus();
+}
+$("gradeOpen").onclick=e=>gradeShow("ober",e.currentTarget);
+$("gradeOpenS").onclick=e=>gradeShow("sek1",e.currentTarget);
+$("gradeHomeO").onclick=e=>gradeShow("ober",e.currentTarget);
+$("gradeHomeS").onclick=e=>gradeShow("sek1",e.currentTarget);
+$("gradeX").onclick=()=>gradeShow(null);
+$("gradeOv").addEventListener("click",e=>{ if(e.target===$("gradeOv")) gradeShow(null); });   // Klick auf den Rand schließt
+document.addEventListener("keydown",e=>{ if(e.key==="Escape" && !$("gradeOv").classList.contains("hidden")) gradeShow(null); });
 
 // ===== Start =====
 (function init(){
