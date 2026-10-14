@@ -108,15 +108,17 @@ body[data-ober] .simple{display:none!important}
 #brand{display:inline-flex;align-items:center;gap:10px;min-height:48px;margin-bottom:8px;color:var(--ink);font-weight:700;font-size:1.1rem;text-decoration:none}
 #brand svg{width:40px;height:40px;flex:none}
 .ov{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center}
-.ovbox{position:relative;width:80vw;max-width:900px;max-height:80vh;display:flex;flex-direction:column;background:var(--card);color:var(--ink);border-radius:18px;padding:18px 18px 14px;box-shadow:0 8px 30px rgba(0,0,0,.35)}
-.ovbox h2{margin:0 48px 8px 0}
-.ovbox .x{position:absolute;top:6px;right:6px;min-width:44px;min-height:44px;padding:0;border:0;background:transparent;color:var(--muted);font-size:1.4rem}
-.ovscroll{overflow:auto;flex:1 1 auto}
-.ovscroll table{width:100%;border-collapse:collapse}
-.ovscroll th,.ovscroll td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--line)}
-.ovscroll th{position:sticky;top:0;background:var(--card);font-size:.85rem;color:var(--muted)}
+/* Einblendung: ca. 80 % der Fläche; Schrift und Zeilenhöhe skalieren mit der Bildschirmhöhe, damit die Tabelle ohne Scrollen passt */
+.ovbox{position:relative;width:80vw;max-width:900px;max-height:80vh;max-height:80dvh;display:flex;flex-direction:column;background:var(--card);color:var(--ink);border-radius:18px;padding:clamp(8px,1.8dvh,18px) clamp(10px,2vw,18px) clamp(6px,1.4dvh,14px);box-shadow:0 8px 30px rgba(0,0,0,.35);font-size:clamp(10px,2.05vh,16px);font-size:clamp(10px,2.05dvh,16px)}
+.ovbox h2{margin:0 44px clamp(4px,.8dvh,8px) 0;font-size:clamp(.95rem,2.7dvh,1.3rem);line-height:1.2}
+.ovbox .x{position:absolute;top:4px;right:4px;min-width:44px;min-height:44px;padding:0;border:0;background:transparent;color:var(--muted);font-size:1.4rem}
+.ovscroll{overflow:auto;flex:1 1 auto;min-height:0}
+.ovscroll table{width:100%;border-collapse:collapse;font-size:1em;line-height:1.25}
+.ovscroll th,.ovscroll td{padding:clamp(2px,.55dvh,7px) clamp(4px,1vw,10px);text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+.ovscroll th{position:sticky;top:0;background:var(--card);font-size:.9em;color:var(--muted)}
 .ovscroll tr.low td{color:var(--bad)}
-.ovbox .muted{margin:8px 0 0;font-size:.85rem}
+.ovbox .muted{margin:clamp(3px,.8dvh,8px) 0 0;font-size:.82em;line-height:1.3}
+@media (max-width:600px){.ovbox{width:94vw;max-height:94vh;max-height:94dvh}}
 /* Start */
 #start{max-width:520px;margin:12vh auto 0;text-align:center}
 #start .row{justify-content:center;margin-top:14px}
@@ -927,7 +929,7 @@ function gradeShow(kind,from){
   gradeFrom=from||null;
   if(kind==="ober"){
     $("gradeT").textContent="Notenpunkte und Prozente (Oberstufe)";
-    $("gradeHead").innerHTML="<tr><th>Punkte</th><th>Note</th><th>Note in Worten</th><th>Rohpunkte (ab … %)</th></tr>";
+    $("gradeHead").innerHTML="<tr><th>Punkte</th><th>Note</th><th>Note in Worten</th><th>Prozent (ab)</th></tr>";
     $("gradeBody").innerHTML=NOTEN.map(r=>'<tr'+(r[0]<=4?' class="low"':'')+'><td><b>'+r[0]+'</b></td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+(r[3]===null?"unter 20 %":r[3]+" %")+'</td></tr>').join("");
     $("gradeNote").textContent="4 Punkte („schwach ausreichend“) liegen im defizitären Bereich. Ein Kurs mit weniger als 5 Punkten gilt als unterbelegt. Umrechnung: Note = (17 − Punkte) / 3.";
     $("gradeSrc").textContent="Quelle: Wikipedia, „Abitur in Hessen“, Abschnitt Leistungsbewertung.";
