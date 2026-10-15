@@ -125,6 +125,13 @@ body[data-ober] .simple{display:none!important}
 .left small{font-size:.8rem;color:var(--muted);font-weight:600}
 .left b{font-size:1.2rem;font-weight:800;white-space:nowrap}
 .left i{font-style:normal;font-size:.75rem;color:var(--muted);margin-top:2px}
+.tlrow{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.tlrow .sm{min-width:44px;min-height:36px;padding:2px 8px;margin:-6px -8px -4px 0;font-size:1.05rem}
+body[data-v=status] #avgReset{display:none}
+.cbox{background:var(--card);color:var(--ink);border-radius:18px;padding:20px;width:min(92vw,430px);box-shadow:0 8px 30px rgba(0,0,0,.35)}
+.cbox h2{margin:0 0 8px}.cbox p{margin:0}
+.cbox .row{margin-top:16px;justify-content:flex-end}
+button.danger{background:var(--bad);border-color:var(--bad);color:#fff}
 /* Start */
 #start{max-width:520px;margin:12vh auto 0;text-align:center}
 #start .row{justify-content:center;margin-top:14px}
@@ -157,7 +164,7 @@ summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:
   <div class="clk"><div id="dTime">--:--:--</div><div id="dDate" class="muted"></div></div>
   <svg id="ana" viewBox="-50 -50 100 100" role="img" aria-label="Analoguhr"><circle r="48" class="face"/><g id="ticks"></g><line id="hH" y2="-26" class="hh"/><line id="hM" y2="-38" class="hm"/><line id="hS" y2="-42" class="hs"/><circle r="2.5" class="hub"/></svg>
   <div id="tiles">
-    <div class="tile"><span class="tl">Ø pro Korrektur</span><b id="tAvg">–</b></div>
+    <div class="tile"><div class="tlrow"><span class="tl">Ø pro Korrektur</span><button class="ghost sm" id="avgReset" title="Durchschnitt zurücksetzen" aria-label="Durchschnitt zurücksetzen">↺</button></div><b id="tAvg">–</b></div>
     <div class="tile" id="tcur"><span class="tl">Aktuelle Korrektur</span><b id="tCur">00:00</b></div>
     <div class="tile" id="tpom"><span class="tl" id="tPl">Bis zur nächsten Pause</span><b id="tPom">--:--</b></div>
   </div>
@@ -309,6 +316,14 @@ summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:
 </div>
 </main>
 
+<div id="avgOv" class="ov hidden" role="alertdialog" aria-modal="true" aria-labelledby="avgT" aria-describedby="avgMsg">
+  <div class="cbox">
+    <h2 id="avgT">Durchschnitt zurücksetzen?</h2>
+    <p id="avgMsg"></p>
+    <div class="row"><button class="ghost" id="avgNo">Abbrechen</button><button class="danger" id="avgYes">Ja, zurücksetzen</button></div>
+  </div>
+</div>
+
 <div id="gradeOv" class="ov hidden" role="dialog" aria-modal="true" aria-labelledby="gradeT">
   <div class="ovbox">
     <button class="x" id="gradeX" aria-label="Schließen">✕</button>
@@ -341,7 +356,7 @@ const $ = id => document.getElementById(id);
 let total=0, done=0, fach="", jg="", errs=[], courses=[], cid=null, cname="", tp=[0], ta=0, undoS=[], redoS=[];   // tp = erledigte Klausuren je Aufgabe, ta = aktive Aufgabe, done = tp[ta]   // Globale Variablen = aktiver Kurs
 const ABBR = {"Französisch":"Frz","Spanisch":"Spa"};
 const shown = {25:false,50:false,75:false,100:false};
-const newT = ()=>({log:[],cur:{a:0,s:0,i:0},run:null,t0:0});   // Zeitmessung (a = einfach, s/i = sprachlich/inhaltlich)
+const newT = ()=>({log:[],from:0,cur:{a:0,s:0,i:0},run:null,t0:0});   // Zeitmessung (a = einfach, s/i = sprachlich/inhaltlich)
 const newP = ()=>({phase:"work",left:ARBEIT_MIN*60000,end:0,round:0,long:false});  // Pomodoro
 const TIPS=["👀 20-20-20: 20 Sekunden auf etwas schauen, das etwa 6 Meter entfernt ist.","🙆 Schultern kreisen lassen und den Nacken dehnen.","💧 Ein Glas Wasser trinken.","🪟 Fenster öffnen und tief durchatmen.","🚶 Kurz aufstehen und ein paar Schritte gehen.","👐 Hände und Handgelenke ausschütteln."];
 let T=newT(), P=newP(), lastSave=0, mode="new", backTo="home";
@@ -353,7 +368,9 @@ const pad = n => String(n).padStart(2,"0");
 function fmt(ms){ const s=Math.round(ms/1000), h=Math.floor(s/3600), m=Math.floor(s%3600/60); return (h?h+":"+pad(m):pad(m))+":"+pad(s%60); }
 const f2 = ms => ms ? fmt(ms) : "–";
 const avgL=(L,k)=>{ const a=L.filter(e=>e[k]>0); return a.length?a.reduce((x,e)=>x+e[k],0)/a.length:0; };
-const avg=k=>avgL(T.log,k);
+// Durchschnitt zählt nur Messungen ab dem letzten Zurücksetzen (T.from); die Zeiten selbst bleiben gespeichert
+const logOf=Tx=>(Tx&&Tx.log)?Tx.log.slice(Math.min(Tx.from||0,Tx.log.length)):[];
+const avg=k=>avgL(logOf(T),k);
 const label=c=>c.name ? c.name+" ("+c.jg+" "+c.fach+")" : c.jg+" "+c.fach;
 const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const remaining=c=>c.tp.reduce((a,x)=>a+Math.max(0,c.total-x),0);
@@ -362,10 +379,10 @@ function ov(){ tp[ta]=done; return {x:tp.reduce((a,v)=>a+v,0), y:total*tp.length
 const ovPct=()=>{ const o=ov(); return o.y?Math.round(o.x/o.y*100):0; };
 function curSync(){ const c=courses.find(x=>x.id===cid); if(c){ tp[ta]=done; Object.assign(c,{name:cname,jg,fach,total,done,errs,T,tp,ta}); } }
 // Solange ein Kurs keine eigene Messung hat: Durchschnitt aller Kurse gleicher Stufe (Oberstufe / Sek I)
-function pooled(k,o){ const L=[]; courses.forEach(c=>{ if(isOber(c.jg)===o && c.T && c.T.log) L.push(...c.T.log); }); return avgL(L,k); }
+function pooled(k,o){ const L=[]; courses.forEach(c=>{ if(isOber(c.jg)===o) L.push(...logOf(c.T)); }); return avgL(L,k); }
 function estC(c){
   const z=remaining(c); if(z<=0) return {ms:0,rough:false};
-  const o=isOber(c.jg), L=(c.T&&c.T.log)||[], g=k=>avgL(L,k)||pooled(k,o);
+  const o=isOber(c.jg), L=logOf(c.T), g=k=>avgL(L,k)||pooled(k,o);
   if(o) return {ms:z*((g("s")||SCHAETZ_SPR_MIN*6e4)+(g("i")||SCHAETZ_INH_MIN*6e4)), rough:!avgL(L,"s")||!avgL(L,"i")};
   return {ms:z*(g("a")||SCHAETZ_SEK1_MIN*6e4), rough:!avgL(L,"a")};
 }
@@ -455,7 +472,7 @@ function confetti(){
 }
 // ===== Ansichten =====
 function view(v){
-  document.body.dataset.v=v;
+  clearPick(); document.body.dataset.v=v;
   ["home","status","setup","app"].forEach(n=>$("v-"+n).classList.toggle("hidden",n!==v));
   if(v==="home"){ $("impSErr").textContent=""; $("bkMsg").textContent=""; renderHome(); }
   if(v==="setup") openSetup();
@@ -518,7 +535,7 @@ function startApp(){
 }
 function renderHome(){
   curSync();
-  $("contList").innerHTML=courses.map(c=>'<button class="ghost" data-id="'+c.id+'">'+esc(label(c))+" – "+progC(c).x+" / "+progC(c).y+'</button>').join("");
+  $("contList").innerHTML=courses.map(c=>'<button class="ghost" data-id="'+c.id+'">'+esc(label(c))+" – "+progC(c).x+" / "+progC(c).y+'<br><small style="font-weight:400;opacity:.75">Code '+esc(c.jg+ABBR[c.fach]+c.total)+'</small></button>').join("");
 }
 function renderStatus(){
   curSync(); let X=0, Y=0;
@@ -541,7 +558,7 @@ function cleanCourse(c,keep){
   const o=keep&&c.T?c.T:{}, log=(c.T&&Array.isArray(c.T.log)?c.T.log:[]).filter(e=>e&&typeof e==="object").map(e=>({n:num(e.n),k:num(e.k),a:num(e.a),s:num(e.s),i:num(e.i)}));
   return {id:String(c.id||newId()).slice(0,40), name:String(c.name||"").slice(0,30), jg:g, fach:f, total:t, done:tp[ta], tp, ta,
     errs:(Array.isArray(c.errs)?c.errs:[]).filter(e=>e&&typeof e.t==="string"&&typeof e.a==="string").map(e=>({t:e.t,a:e.a})),
-    T:Object.assign(newT(),{log,cur:Object.assign({a:0,s:0,i:0},o.cur),run:["a","s","i"].includes(o.run)?o.run:null,t0:+o.t0||0})};
+    T:Object.assign(newT(),{log,from:Math.min(Math.max(0,Math.floor(+(c.T&&c.T.from))||0),log.length),cur:Object.assign({a:0,s:0,i:0},o.cur),run:["a","s","i"].includes(o.run)?o.run:null,t0:+o.t0||0})};
 }
 function importBackup(o){
   const list=(o&&o.app==="korrektur-begleiter"&&Array.isArray(o.courses)?o.courses:[]).map(c=>cleanCourse(c,false)).filter(Boolean), m=$("bkMsg");
@@ -565,7 +582,8 @@ $("bkFile").onchange=e=>{
   fr.onerror=()=>{ $("bkMsg").textContent="Die Datei konnte nicht gelesen werden."; };
   fr.readAsText(f);
 };
-$("contList").onclick=e=>{ const b=e.target.closest("button[data-id]"); if(b) openCourse(b.dataset.id); };
+const clickEl=e=>{ let n=e.target; if(n&&n.nodeType===3) n=n.parentElement; return n; };
+$("contList").onclick=e=>{ const n=clickEl(e), b=n&&n.closest&&n.closest("button[data-id]"); if(b) openCourse(b.dataset.id); };
 $("courseSel").onchange=e=>openCourse(e.target.value);
 
 // ===== Uhren =====
@@ -616,7 +634,7 @@ function tiles(){
     const r=T.run===k; $(id).classList.toggle("run",r); $(id).setAttribute("aria-pressed",r); $(id).disabled=brk||fin;
     $(id).textContent = r ? "● "+(k==="a"?"Läuft …":l+" läuft …") : "▶ "+l;
   });
-  $("bPause").disabled=!T.run; $("feier").textContent=$("sFeier").textContent=feierText(); $("pauseTip").classList.toggle("hidden",!brk); $("pauseTip").textContent=P.tip||""; $("bSkip").classList.toggle("hidden",!brk);
+  $("bPause").disabled=!T.run; $("avgReset").disabled=!logOf(T).length; $("feier").textContent=$("sFeier").textContent=feierText(); $("pauseTip").classList.toggle("hidden",!brk); $("pauseTip").textContent=P.tip||""; $("bSkip").classList.toggle("hidden",!brk);
 }
 function startT(k){ if(P.phase==="break") return; fold(); T.run=k; T.t0=Date.now(); saveT(); tiles(); }
 function pauseT(){ fold(); T.run=null; saveT(); tiles(); }
@@ -635,16 +653,20 @@ function inc(entry){
   advance(); after();
 }
 // Ist die aktive Aufgabe komplett, automatisch zur nächsten offenen Aufgabe wechseln
+function nextOpen(from){
+  for(let j=1;j<tp.length;j++){ const i=(from+j)%tp.length; if(tp[i]<total) return i; }
+  return -1;
+}
 function advance(){
   if(done<total) return;
-  const nx=tp.findIndex((x,i)=>i!==ta&&x<total), old=ta+1;
+  const nx=nextOpen(ta), old=ta+1;
   if(nx>=0){ gotoTask(nx); toast("Aufgabe "+old+" fertig, weiter mit Aufgabe "+(nx+1)+" 👉"); }
 }
 function undo(){
   let r=undoS.pop();
   if(!r){ if(done<=0) return; const l=T.log[T.log.length-1]; r={k:ta,log:(l&&l.n===done&&(l.k||1)===ta+1)?l:null}; }   // nach Neuladen: letzte Korrektur der aktiven Aufgabe
   gotoTask(r.k); if(done<=0) return;
-  done--; if(r.log){ const i=T.log.indexOf(r.log); if(i>=0) T.log.splice(i,1); }
+  done--; if(r.log){ const i=T.log.indexOf(r.log); if(i>=0){ T.log.splice(i,1); if(i<(T.from||0)) T.from--; } }
   redoS.push(r); after();
 }
 function redo(){
@@ -659,10 +681,13 @@ function renderTasks(){
 function setActive(k){ if(k===ta||k>=tp.length) return; fold(); T.run=null; gotoTask(k); persist(); render(); }
 function toggleTask(k){
   tp[ta]=done;
-  if(tp[k]>=total){ if(!confirm("Aufgabe "+(k+1)+" wieder auf 0 Korrekturen setzen?")) return; tp[k]=0; } else tp[k]=total;
-  done=tp[ta]; undoS=[]; redoS=[]; advance(); persist(); render(); milestone(ovPct());
+  let reopened=false;
+  if(tp[k]>=total){ if(!confirm("Aufgabe "+(k+1)+" wieder auf 0 Korrekturen setzen?")) return; tp[k]=0; reopened=true; } else tp[k]=total;
+  done=tp[ta]; undoS=[]; redoS=[];
+  if(reopened) gotoTask(k); else advance();
+  persist(); render(); milestone(ovPct());
 }
-$("tasks").onclick=e=>{ const b=e.target.closest("[data-done]"); if(b){ toggleTask(+b.dataset.done); return; } const r=e.target.closest(".trow"); if(r) setActive(+r.dataset.k); };
+$("tasks").onclick=e=>{ const n=clickEl(e), b=n&&n.closest&&n.closest("[data-done]"); if(b){ toggleTask(+b.dataset.done); return; } const r=n&&n.closest&&n.closest(".trow"); if(r) setActive(+r.dataset.k); };
 
 // ===== Bildschirm wach halten =====
 let wl=null, wakeOn=store.get("kb_wake")!=="0", wakeFail=false;
@@ -696,18 +721,32 @@ function showBanner(){
   $("bannerTxt").innerHTML=h; $("banner").classList.remove("hidden");
 }
 // Kurs-Code (9erSpa28) öffnet den Kurs mit seinem Stand auf diesem Gerät; Code mit Stand (9erSpa28-12) setzt zusätzlich den Fortschritt
+function clearPick(){ const o=$("pickBox"); if(o) o.remove(); }
+function openImported(c,d,fresh){
+  if(d!==null && c.tp.length===1){ c.tp[0]=d; c.done=d; }   // Code mit Stand gilt nur bei einer Aufgabe pro Klausur
+  loadCourse(c.id); persist(); applyFach(); render(); view("app");
+  if(fresh&&d===null){ $("bannerTxt").innerHTML="<p>Neuer Kurs angelegt, der Fortschritt steht bei 0 von "+c.total+". Für diesen Code ist auf diesem Gerät noch kein Stand gespeichert. Den Stand überträgst du mit dem Code mit Stand (z. B. "+code()+"-12) oder mit der Datensicherung.</p>"; $("banner").classList.remove("hidden"); }
+  else { showBanner(); toast("Stand übernommen ✓"); }
+}
+// Kurs-Code: genau ein Treffer öffnet den Kurs, mehrere Treffer (gleiche Stufe, Fach und Anzahl) lassen dich den Kurs wählen
 function importCode(inputId,errId){
+  clearPick();
   const m=$(inputId).value.trim().match(/^(.+?)(Frz|Spa)(\d+)(?:-(\d+))?$/i), g=m?normJg(m[1]):"", t=m?+m[3]:0, d=m&&m[4]!==undefined?+m[4]:null;
   if(!m||!g||t<1||(d!==null&&d>t)){ $(errId).textContent="Der Code ist ungültig. Beispiele: 9erSpa28 oder EFrz26"; return; }
   const f=/^frz$/i.test(m[2])?"Französisch":"Spanisch";
-  curSync();   // gleicher Kurs (Jahrgang, Fach, Anzahl) wird geöffnet, sonst als neuer Kurs angelegt
-  let c=courses.find(x=>x.jg===g&&x.fach===f&&x.total===t), fresh=false;
+  curSync();
+  const hits=courses.filter(x=>x.jg===g&&x.fach===f&&x.total===t);
+  if(hits.length>1){
+    $(errId).textContent="Mehrere Kurse haben diesen Code. Welchen möchtest du öffnen?";
+    const box=document.createElement("div"); box.id="pickBox";
+    hits.forEach(c=>{ const b=document.createElement("button"); b.className="ghost"; b.style.cssText="width:100%;text-align:left;margin-top:8px"; b.textContent=label(c)+" – "+progC(c).x+" / "+progC(c).y;
+      b.onclick=()=>{ clearPick(); $(errId).textContent=""; $(inputId).value=""; openImported(c,d,false); }; box.appendChild(b); });
+    $(errId).after(box); return;
+  }
+  let c=hits[0], fresh=false;
   if(!c){ c={id:newId(),name:"",jg:g,fach:f,total:t,done:0,tp:[0],ta:0,errs:[],T:newT()}; courses.push(c); fresh=true; }
-  if(d!==null && c.tp.length===1){ c.tp[0]=d; c.done=d; }   // Code mit Stand gilt nur bei einer Aufgabe pro Klausur
   $(errId).textContent=""; $(inputId).value="";
-  loadCourse(c.id); persist(); applyFach(); render(); view("app");
-  if(fresh&&d===null){ $("bannerTxt").innerHTML="<p>Neuer Kurs angelegt, der Fortschritt steht bei 0 von "+t+". Für diesen Code ist auf diesem Gerät noch kein Stand gespeichert. Den Stand überträgst du mit dem Code mit Stand (z. B. "+code()+"-12) oder mit der Datensicherung.</p>"; $("banner").classList.remove("hidden"); }
-  else { showBanner(); toast("Stand übernommen ✓"); }
+  openImported(c,d,fresh);
 }
 
 // ===== Bedienung =====
@@ -905,21 +944,23 @@ function downloadXlsx(){
   const S=(v,s)=>({v,s,str:1}), N=(v,s,f)=>({v,s,f});
   const idc=e=>tp.length>1&&e.k ? S("Aufgabe "+e.k+", Nr. "+e.n,0) : N(e.n,0);
   const nSum=o?6:2, hdr=6+nSum, f1=hdr+1, l1=hdr+L.length, rg=c=>c+f1+":"+c+l1;
+  const from=Math.min(T.from||0,L.length), LA=L.slice(from), ra=c=>c+(f1+from)+":"+c+l1, rs=from>0?" (seit Zurücksetzen)":"";
+  const AV=(v,st,c)=>LA.length ? N(v,st,"IFERROR(AVERAGEIF("+ra(c)+',">0"),0)') : S("–",0);
   const tot=k=>L.reduce((x,e)=>x+(e[k]||0),0)/D;
-  const av=k=>{ const a=L.filter(e=>e[k]>0); return a.length?a.reduce((x,e)=>x+e[k],0)/a.length/D:0; };
-  const avT=L.length?(tot("s")+tot("i"))/L.length:0;
+  const av=k=>{ const a=LA.filter(e=>e[k]>0); return a.length?a.reduce((x,e)=>x+e[k],0)/a.length/D:0; };
+  const avT=(()=>{ const a=LA.filter(e=>(e.s||0)+(e.i||0)>0); return a.length?a.reduce((x,e)=>x+(e.s||0)+(e.i||0),0)/a.length/D:0; })();
   const rows=[[S("Korrekturzeiten – "+jg+" "+fach,2)],
     [S(ov().x+" von "+ov().y+" Korrekturen erledigt, davon "+L.length+" mit Zeitmessung. Stand: "+new Date().toLocaleDateString("de-DE"),0)],[],[S("Zusammenfassung",1)]];
   if(o) rows.push(
     [S("Gesamtzeit sprachlich",0),N(tot("s"),4,"SUM("+rg("B")+")")],
     [S("Gesamtzeit inhaltlich",0),N(tot("i"),4,"SUM("+rg("C")+")")],
     [S("Gesamte Arbeitszeit",1),N(tot("s")+tot("i"),5,"SUM("+rg("D")+")")],
-    [S("Ø sprachlich pro Korrektur",0),N(av("s"),4,'AVERAGEIF('+rg("B")+',">0")')],
-    [S("Ø inhaltlich pro Korrektur",0),N(av("i"),4,'AVERAGEIF('+rg("C")+',">0")')],
-    [S("Ø gesamt pro Korrektur",1),N(avT,5,'AVERAGEIF('+rg("D")+',">0")')]);
+    [S("Ø sprachlich pro Korrektur"+rs,0),AV(av("s"),4,"B")],
+    [S("Ø inhaltlich pro Korrektur"+rs,0),AV(av("i"),4,"C")],
+    [S("Ø gesamt pro Korrektur"+rs,1),AV(avT,5,"D")]);
   else rows.push(
     [S("Gesamte Arbeitszeit",1),N(tot("a"),5,"SUM("+rg("B")+")")],
-    [S("Ø pro Korrektur",1),N(av("a"),5,'AVERAGEIF('+rg("B")+',">0")')]);
+    [S("Ø pro Korrektur"+rs,1),AV(av("a"),5,"B")]);
   rows.push([], o ? [S("Korrektur Nr.",3),S("Sprachlich (h:mm:ss)",3),S("Inhaltlich (h:mm:ss)",3),S("Gesamt (h:mm:ss)",3)] : [S("Korrektur Nr.",3),S("Zeit (h:mm:ss)",3)]);
   L.forEach((e,i)=>{ const r=f1+i;
     rows.push(o ? [idc(e),N((e.s||0)/D,4),N((e.i||0)/D,4),N(((e.s||0)+(e.i||0))/D,4,"B"+r+"+C"+r)] : [idc(e),N((e.a||0)/D,4)]); });
@@ -937,7 +978,7 @@ function downloadXlsx(){
     ["xl/workbook.xml",H+'<workbook '+M+' xmlns:r="'+R+'"><sheets><sheet name="Korrekturzeiten" sheetId="1" r:id="rId1"/></sheets></workbook>'],
     ["xl/_rels/workbook.xml.rels",H+'<Relationships '+PR+'><Relationship Id="rId1" Type="'+R+'/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="'+R+'/styles" Target="styles.xml"/></Relationships>'],
     ["xl/styles.xml",H+'<styleSheet '+M+'><numFmts count="1"><numFmt numFmtId="164" formatCode="[h]:mm:ss"/></numFmts><fonts count="3"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="16"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFDCE6F1"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="6">'+xf(0,0,0)+xf(0,1,0)+xf(0,2,0)+xf(0,1,2,1)+xf(164,0,0)+xf(164,1,0)+'</cellXfs></styleSheet>'],
-    ["xl/worksheets/sheet1.xml",H+'<worksheet '+M+'><cols><col min="1" max="1" width="32" customWidth="1"/><col min="2" max="4" width="22" customWidth="1"/></cols><sheetData>'+sheet+'</sheetData></worksheet>']
+    ["xl/worksheets/sheet1.xml",H+'<worksheet '+M+'><cols><col min="1" max="1" width="48" customWidth="1"/><col min="2" max="4" width="22" customWidth="1"/></cols><sheetData>'+sheet+'</sheetData></worksheet>']
   ],ct+"sheet");
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=jg+" "+(ABBR[fach]||"")+" Korrekturzeiten.xlsx";
   document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },4000);
@@ -974,6 +1015,21 @@ $("gradeHomeS").onclick=e=>gradeShow("sek1",e.currentTarget);
 $("gradeX").onclick=()=>gradeShow(null);
 $("gradeOv").addEventListener("click",e=>{ if(e.target===$("gradeOv")) gradeShow(null); });   // Klick auf den Rand schließt
 document.addEventListener("keydown",e=>{ if(e.key==="Escape" && !$("gradeOv").classList.contains("hidden")) gradeShow(null); });
+
+// ===== Durchschnitt zurücksetzen (mit eigener Bestätigung; kein Browser-Dialog, der blockiert werden könnte) =====
+let avgFrom=null;
+function avgAsk(on,from){
+  const ov=$("avgOv");
+  if(!on){ ov.classList.add("hidden"); document.body.style.overflow=""; if(avgFrom) avgFrom.focus(); avgFrom=null; return; }
+  const n=logOf(T).length, cur=isOber(jg) ? "Ø sprachlich "+f2(avg("s"))+", Ø inhaltlich "+f2(avg("i")) : "Ø "+f2(avg("a"));
+  $("avgMsg").textContent="Aktuell: "+cur+" aus "+n+(n===1?" Korrektur":" Korrekturen")+". Der Durchschnitt und die Restzeit-Schätzung beginnen danach von vorn. Die gemessenen Zeiten bleiben gespeichert und stehen weiter in der Excel-Tabelle.";
+  avgFrom=from||null; ov.classList.remove("hidden"); document.body.style.overflow="hidden"; $("avgNo").focus();
+}
+$("avgReset").onclick=e=>{ if(logOf(T).length) avgAsk(true,e.currentTarget); };
+$("avgNo").onclick=()=>avgAsk(false);
+$("avgYes").onclick=()=>{ T.from=T.log.length; persist(); avgAsk(false); render(); toast("Durchschnitt zurückgesetzt ✓"); };
+$("avgOv").addEventListener("click",e=>{ if(e.target===$("avgOv")) avgAsk(false); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape" && !$("avgOv").classList.contains("hidden")) avgAsk(false); });
 
 // ===== Start =====
 (function init(){

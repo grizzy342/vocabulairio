@@ -6,12 +6,12 @@ Eine einzelne Webseite (`index.html`), die beim Korrigieren von Schülerarbeiten
 
 - **Mehrere Kurse parallel** mit Fortschrittsbalken (x / y, Prozent), Motivationssprüchen, Meilensteinen und Konfetti bei 100 %
 - **Verbleibende Arbeiten** links neben dem Fortschrittsbalken, motivierend formuliert (z. B. „Nur noch 7 Stück! 💪🏃“), in der Sek I und der Oberstufe
-- **Aufgaben pro Klausur:** Für jede Aufgabe gibt es einen eigenen Fortschrittsbalken. Du kannst eine Aufgabe als „komplett erledigt" anklicken, die aktive Aufgabe wechseln, und die Seite springt nach einer fertigen Aufgabe automatisch zur nächsten offenen.
+- **Aufgaben pro Klausur:** Für jede Aufgabe gibt es einen eigenen Fortschrittsbalken. Du kannst eine Aufgabe als „komplett erledigt" anklicken, die aktive Aufgabe wechseln, und die Seite springt nach einer fertigen Aufgabe automatisch zur nächsten offenen. Nach einer fertigen Aufgabe geht es mit der nächsten offenen Aufgabe weiter (danach wieder von vorn). Eine wieder geöffnete Aufgabe wird gleich zur aktiven.
 - **Notentabellen** als Einblendung auf der Seite (kein neues Fenster): bei Oberstufen-Kursen die Notenpunkte 15 bis 0 mit Note und Prozent (KMK-Skala, wie auf Wikipedia unter „Abitur in Hessen“), bei Sek-I-Kursen die Noten 1 bis 6 mit Prozentbereichen. Beide Tabellen lassen sich auch auf der Startseite einblenden. Schließen mit ✕, Klick auf den Rand oder Esc. Die Tabellen passen ohne Scrollen auf iPad (quer) und Handy (hoch).
 - **Rückgängig und Wiederherstellen** über zwei Buttons, auch über Aufgabenwechsel hinweg
 - **Logo** (Yin-Yang) oben links, ein Link zum GitHub-Repository dieser Seite
 - **Statusübersicht** (nur lesend): alle Kurse mit verbleibenden Korrekturen, Restzeit und Feierabend-Prognose
-- **Zeitmessung** nach dem Pomodoro-Prinzip mit Start, Pause und Stopp, Durchschnitt pro Korrektur, Pausen mit Augenpausen-Tipp
+- **Zeitmessung** nach dem Pomodoro-Prinzip mit Start, Pause und Stopp, Durchschnitt pro Korrektur, Pausen mit Augenpausen-Tipp. Der Durchschnitt lässt sich pro Kurs mit dem Button ↺ in der Kachel „Ø pro Korrektur“ nach einer Bestätigung zurücksetzen. Die gemessenen Zeiten bleiben dabei gespeichert, auch in der Excel-Tabelle (dort zählen die Durchschnitte dann erst ab dem Zurücksetzen).
 - **Oberstufe** (E, Q, Q1 bis Q4): getrennte Stoppuhren für sprachliche und inhaltliche Korrektur
 - **Uhren** (digital und analog) und Bildschirm bleibt an (wo der Browser es erlaubt)
 - **PONS-Wörterbuch** (Französisch oder Spanisch, je nach Kurs), öffnet in einem neuen Tab
@@ -46,7 +46,7 @@ Eine einzelne Webseite (`index.html`), die beim Korrigieren von Schülerarbeiten
 - Die Sätze, die du analysieren lässt, gehen an die Anthropic-API. Gib deshalb keine echten Schülernamen ein.
 - **Zwischen Geräten** übertragen geht auf zwei Wegen:
   - **Datensicherung:** auf der Startseite „Sicherung speichern" und auf dem anderen Gerät „Sicherung einlesen". Enthalten sind alle Kurse, Fehlerlisten und Zeiten, aber nicht der API-Key.
-  - **Code:** Der Kurs-Code (z. B. `9erSpa28`) bleibt immer gleich und öffnet den Kurs mit seinem aktuellen Stand auf diesem Gerät. Auf einem anderen Gerät kennt er den Fortschritt nicht. Dafür gibt es den **Code mit Stand** (z. B. `9erSpa28-12`). Zeiten und Fehlerliste überträgt nur die Datensicherung.
+  - **Code:** Der Kurs-Code (z. B. `9erSpa28`) bleibt immer gleich. Haben zwei Kurse denselben Code (gleiche Stufe, gleiches Fach, gleiche Anzahl), fragt die Seite, welchen du öffnen willst. In der Kursliste auf der Startseite ist immer eindeutig, welcher Kurs gemeint ist und öffnet den Kurs mit seinem aktuellen Stand auf diesem Gerät. Auf einem anderen Gerät kennt er den Fortschritt nicht. Dafür gibt es den **Code mit Stand** (z. B. `9erSpa28-12`). Zeiten und Fehlerliste überträgt nur die Datensicherung.
 - Löschst du die Browserdaten oder nutzt den privaten Modus, sind die Daten weg. Mach daher ab und zu eine Sicherung.
 - Safari auf iPhone und iPad kann Daten von Seiten löschen, die etwa eine Woche nicht geöffnet wurden. Am besten die Seite über „Zum Home-Bildschirm" ablegen und regelmäßig sichern.
 
