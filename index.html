@@ -119,6 +119,12 @@ body[data-ober] .simple{display:none!important}
 .ovscroll tr.low td{color:var(--bad)}
 .ovbox .muted{margin:clamp(3px,.8dvh,8px) 0 0;font-size:.82em;line-height:1.3}
 @media (max-width:600px){.ovbox{width:94vw;max-height:94vh;max-height:94dvh}}
+.barrow{display:flex;align-items:center;gap:12px;margin:12px 0}
+.barrow .bar{flex:1 1 120px;margin:0;min-width:0}
+.left{flex:0 0 auto;display:flex;flex-direction:column;justify-content:center;line-height:1.15;padding:6px 14px;border-radius:14px;background:var(--field);border:1.5px solid var(--line)}
+.left small{font-size:.8rem;color:var(--muted);font-weight:600}
+.left b{font-size:1.2rem;font-weight:800;white-space:nowrap}
+.left i{font-style:normal;font-size:.75rem;color:var(--muted);margin-top:2px}
 /* Start */
 #start{max-width:520px;margin:12vh auto 0;text-align:center}
 #start .row{justify-content:center;margin-top:14px}
@@ -226,7 +232,10 @@ summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:
         <button class="x" id="bannerX" aria-label="Hinweis schließen">✕</button><div id="bannerTxt"></div>
       </div>
       <div class="big"><div class="count"><span id="x">0</span> / <span id="y">0</span> <span class="muted" id="xl" style="font-weight:500;font-size:1rem">Korrekturen erledigt</span></div><div class="pct" id="pct">0 %</div></div>
-      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar"><div class="fill" id="fill"></div></div>
+      <div class="barrow">
+        <div class="left" id="left" aria-live="polite"><small id="leftPre"></small><b id="leftMain"></b><i id="leftSub" class="hidden"></i></div>
+        <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar"><div class="fill" id="fill"></div></div>
+      </div>
       <p class="msg" id="msg"></p>
       <div id="tasks" class="hidden"></div>
       <p id="rest" style="font-weight:600"></p>
@@ -397,8 +406,24 @@ function colorFor(p){ return p<34 ? "var(--bad)" : p<67 ? "var(--warn)" : "var(-
 function persist(){ curSync(); lastSave=Date.now(); store.set("kb_data",JSON.stringify({v:2,cid,courses,P})); }
 const save=persist, saveErrs=persist, saveT=persist;
 function resetShown(){ Object.keys(shown).forEach(k=>shown[k]=false); }
+// Verbleibende Arbeiten, motivierend formuliert (gilt für Sek I und Oberstufe)
+function leftInfo(z){
+  if(z<=0) return ["Alles","erledigt! 🏆"];
+  if(z===1) return ["Nur noch","1 Stück! 🏁🔥"];
+  if(z<=3) return ["Nur noch",z+" Stück! 🚀"];
+  if(z<=5) return ["Nur noch",z+" Stück! 🔥💪"];
+  if(z<=10) return ["Nur noch",z+" Stück! 💪🏃"];
+  if(z<=20) return ["Nur noch",z+" Stück! 🌟"];
+  return ["Noch",z+" Stück 🧗"];
+}
+function renderLeft(){
+  const o=ov(), z=o.y-o.x, i=leftInfo(z);
+  $("leftPre").textContent=i[0]; $("leftMain").textContent=i[1];
+  const sub=$("leftSub"); sub.classList.toggle("hidden",tp.length<2||z<=0);
+  if(tp.length>1) sub.textContent="Aufgabe "+(ta+1)+": noch "+Math.max(0,total-done);
+}
 function render(){
-  const o=ov(), p=o.y?Math.round(o.x/o.y*100):0;
+  const o=ov(), p=o.y?Math.round(o.x/o.y*100):0; renderLeft();
   $("x").textContent=o.x; $("y").textContent=o.y; $("pct").textContent=p+" %"; $("xl").textContent=tp.length>1?"Aufgaben-Korrekturen erledigt":"Korrekturen erledigt";
   $("fill").style.width=p+"%"; $("fill").style.backgroundColor=colorFor(p); $("bar").setAttribute("aria-valuenow",p);
   let q=quotes[0][1]; quotes.forEach(([t,s])=>{ if(p>=t) q=s; }); $("msg").textContent=q;
