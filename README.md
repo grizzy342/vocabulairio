@@ -12,8 +12,8 @@ Eine einzelne Webseite (`index.html`), die beim Korrigieren von Schülerarbeiten
 - **Logo** (Yin-Yang) oben links, ein Link zum GitHub-Repository dieser Seite
 - **Statusübersicht** (nur lesend): alle Kurse mit verbleibenden Korrekturen, Restzeit und Feierabend-Prognose
 - **Zeitmessung** nach dem Pomodoro-Prinzip mit Start, Pause und Stopp, Durchschnitt pro Korrektur, Pausen mit Augenpausen-Tipp. Der Durchschnitt lässt sich pro Kurs mit dem Button ↺ in der Kachel „Ø pro Korrektur“ nach einer Bestätigung zurücksetzen. Die gemessenen Zeiten bleiben dabei gespeichert, auch in der Excel-Tabelle (dort zählen die Durchschnitte dann erst ab dem Zurücksetzen).
-- **Oberstufe** (E, Q, Q1 bis Q4): getrennte Stoppuhren für sprachliche und inhaltliche Korrektur
-- **Uhren** (digital und analog) und Bildschirm bleibt an (wo der Browser es erlaubt)
+- **Oberstufe** (E, Q, Q1 bis Q4): getrennte Stoppuhren für sprachliche und inhaltliche Korrektur; die Kacheln „Ø pro Korrektur“ und „Aktuelle Korrektur“ zeigen beide Werte (sprachl. und inhaltl.) und fett die Summe (Σ)
+- **Uhren** (digital und analog) und Bildschirm bleibt an (wo der Browser es erlaubt). Der Hinweis zur Systemeinstellung erscheint nur, wenn du auf das ⓘ neben dem Button tippst, und verschiebt die Seite nicht.
 - **PONS-Wörterbuch** (Französisch oder Spanisch, je nach Kurs), öffnet in einem neuen Tab
 - **KI-Übersetzer und Fehleranalyse** mit Claude: Übersetzung, Fehler nach Grammatik, Lexik und Syntax, korrigierte Fassung. Mit API-Key direkt in der Seite, **ohne Key** über die Claude-App: Prompt kopieren, dort einfügen, Antwort zurück in die Seite einfügen
 - **Gesammelte typische Fehler** als Word-Datei im Querformat (A4), z. B. `9er Spa typische Fehler.docx`

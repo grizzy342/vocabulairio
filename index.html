@@ -74,11 +74,14 @@ button:disabled{opacity:.5;cursor:default}
 .hs{stroke:var(--bad);stroke-width:1}.hub{fill:var(--bad)}
 #tiles{display:flex;gap:10px;flex-wrap:wrap;flex:1 1 380px}
 .tile{flex:1 1 130px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px;display:flex;flex-direction:column;justify-content:center}
+.tile b .sub{font-weight:500;font-size:.95rem}
 .tile b{font-size:1.45rem;line-height:1.25;font-variant-numeric:tabular-nums}
 .tl{font-size:.8rem;color:var(--muted)}
 .tile.run{border-color:var(--ok);box-shadow:0 0 0 2px var(--ok)}.tile.brk{border-color:var(--warn);box-shadow:0 0 0 2px var(--warn)}
 body[data-v=home] #tiles,body[data-v=setup] #tiles{display:none}
-#wakeRow{display:flex;justify-content:flex-end;margin-bottom:8px}
+#wakeRow{display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:8px;position:relative}
+#wakeHint{position:absolute;right:0;top:100%;z-index:60;width:min(340px,92vw);margin:6px 0 0;padding:10px 12px;background:var(--card,#fff);color:inherit;border:1px solid rgba(128,128,128,.5);border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.3);font-size:.9rem;line-height:1.35}
+#wakeHint.hidden{display:none}
 body[data-v=status] #wakeRow,body[data-v=status] #wakeHint{display:none}
 .sm{min-height:40px;padding:4px 12px;font-size:.85rem}
 .paths{display:grid;gap:16px;margin-top:16px}
@@ -169,8 +172,8 @@ summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:
     <div class="tile" id="tpom"><span class="tl" id="tPl">Bis zur nächsten Pause</span><b id="tPom">--:--</b></div>
   </div>
 </header>
-<div id="wakeRow"><button class="ghost sm" id="wakeBtn"></button></div>
-<p id="wakeHint" class="muted hidden">Der Bildschirm kann hier nicht automatisch wach gehalten werden. Stelle die Sperre im System um: iPhone/iPad: Einstellungen → Anzeige &amp; Helligkeit → Automatische Sperre → Nie. Android: Einstellungen → Display → Bildschirm-Timeout.</p>
+<div id="wakeRow"><button class="ghost sm" id="wakeBtn"></button><button class="ghost sm" id="wakeInfo" aria-label="Info zu Bildschirm bleibt an" aria-expanded="false">ⓘ</button>
+<p id="wakeHint" role="note" class="muted hidden">Der Bildschirm kann hier nicht automatisch wach gehalten werden. Stelle die Sperre im System um: iPhone/iPad: Einstellungen → Anzeige &amp; Helligkeit → Automatische Sperre → Nie. Android: Einstellungen → Display → Bildschirm-Timeout.</p></div>
 
 <section id="v-home">
   <h1>Korrektur-Begleiter</h1>
@@ -625,8 +628,10 @@ function tick(){
 }
 function tiles(){
   const n=Date.now(), o=isOber(jg), c=T.cur, brk=P.phase==="break", fin=total>0&&done>=total;
-  $("tAvg").innerHTML = o ? "spr. "+f2(avg("s"))+"<br>inh. "+f2(avg("i")) : f2(avg("a"));
-  $("tCur").innerHTML = o ? "spr. "+fmt(c.s)+"<br>inh. "+fmt(c.i) : fmt(c.a);
+  const sub=(l,v)=>'<span class="sub">'+l+" "+v+"</span><br>";
+  const as_=avg("s"), ai=avg("i");
+  $("tAvg").innerHTML = o ? sub("sprachl.",f2(as_))+sub("inhaltl.",f2(ai))+"Σ "+((as_||ai)?fmt(as_+ai):"–") : f2(avg("a"));
+  $("tCur").innerHTML = o ? sub("sprachl.",fmt(c.s))+sub("inhaltl.",fmt(c.i))+"Σ "+fmt(c.s+c.i) : fmt(c.a);
   $("tPl").textContent = brk ? (P.long?"Lange Pause ☕":"Pause ☕") : "Bis zur nächsten Pause";
   $("tPom").textContent = fmt(brk ? Math.max(0,P.end-n) : P.left);
   $("tcur").classList.toggle("run",!!T.run); $("tpom").classList.toggle("brk",brk);
@@ -699,8 +704,12 @@ async function reqWake(){
 }
 function wakeUi(){
   $("wakeBtn").textContent = !wakeOn ? "🌙 Bildschirm darf ausgehen" : wl ? "☀️ Bildschirm bleibt an" : "☀️ Bildschirm bleibt an (wird angefordert)";
-  $("wakeHint").classList.toggle("hidden", !(wakeOn&&wakeFail));
 }
+const wakeHintShow=on=>{ $("wakeHint").classList.toggle("hidden",!on); $("wakeInfo").setAttribute("aria-expanded",on?"true":"false"); };
+$("wakeInfo").onclick=e=>{ e.stopPropagation(); wakeHintShow($("wakeHint").classList.contains("hidden")); };
+$("wakeHint").onclick=e=>e.stopPropagation();
+document.addEventListener("click",()=>wakeHintShow(false));
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") wakeHintShow(false); });
 $("wakeBtn").onclick=()=>{ wakeOn=!wakeOn; store.set("kb_wake",wakeOn?"1":"0"); if(!wakeOn&&wl){ wl.release(); wl=null; } wakeFail=false; wakeUi(); reqWake(); };
 ["pointerdown","keydown"].forEach(ev=>document.addEventListener(ev,()=>{ reqWake(); audio(); }));
 document.addEventListener("visibilitychange",reqWake);
