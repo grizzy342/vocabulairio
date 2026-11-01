@@ -6,13 +6,13 @@ Eine einzelne Webseite (`index.html`), die beim Korrigieren von Schülerarbeiten
 
 - **Mehrere Kurse parallel** mit Fortschrittsbalken (x / y, Prozent), Motivationssprüchen, Meilensteinen und Konfetti bei 100 %
 - **Verbleibende Arbeiten** links neben dem Fortschrittsbalken, motivierend formuliert (z. B. „Nur noch 7 Stück! 💪🏃“), in der Sek I und der Oberstufe
-- **Aufgaben pro Klausur:** Für jede Aufgabe gibt es einen eigenen Fortschrittsbalken. Du kannst eine Aufgabe als „komplett erledigt" anklicken, die aktive Aufgabe wechseln, und die Seite springt nach einer fertigen Aufgabe automatisch zur nächsten offenen. Nach einer fertigen Aufgabe geht es mit der nächsten offenen Aufgabe weiter (danach wieder von vorn). Eine wieder geöffnete Aufgabe wird gleich zur aktiven.
+- **Seiten pro Arbeit:** Am Anfang gibst du an, wie viele Seiten die Arbeit hat (1 bis 40) und bei wie vielen Seiten schon alle Arbeiten korrigiert sind. Jede Seite hat einen eigenen Fortschrittsbalken. Du kannst eine Seite als „komplett erledigt“ anklicken oder die aktive Seite wechseln. Nach einer fertigen Seite geht es mit der nächsten offenen Seite weiter (danach wieder von vorn). Eine wieder geöffnete Seite wird gleich zur aktiven. Die Zeitmessung gilt pro Seite, die Kachel zeigt „Ø pro Seite“.
 - **Notentabellen** als Einblendung auf der Seite (kein neues Fenster): bei Oberstufen-Kursen die Notenpunkte 15 bis 0 mit Note und Prozent (KMK-Skala, wie auf Wikipedia unter „Abitur in Hessen“), bei Sek-I-Kursen die Noten 1 bis 6 mit Prozentbereichen. Beide Tabellen lassen sich auch auf der Startseite einblenden. Schließen mit ✕, Klick auf den Rand oder Esc. Die Tabellen passen ohne Scrollen auf iPad (quer) und Handy (hoch).
-- **Rückgängig und Wiederherstellen** über zwei Buttons, auch über Aufgabenwechsel hinweg
+- **Rückgängig und Wiederherstellen** über zwei Buttons, auch über Seitenwechsel hinweg
 - **Logo** (Yin-Yang) oben links, ein Link zum GitHub-Repository dieser Seite
 - **Statusübersicht** (nur lesend): alle Kurse mit verbleibenden Korrekturen, Restzeit und Feierabend-Prognose
-- **Zeitmessung** nach dem Pomodoro-Prinzip mit Start, Pause und Stopp, Durchschnitt pro Korrektur, Pausen mit Augenpausen-Tipp. Der Durchschnitt lässt sich pro Kurs mit dem Button ↺ in der Kachel „Ø pro Korrektur“ nach einer Bestätigung zurücksetzen. Die gemessenen Zeiten bleiben dabei gespeichert, auch in der Excel-Tabelle (dort zählen die Durchschnitte dann erst ab dem Zurücksetzen).
-- **Oberstufe** (E, Q, Q1 bis Q4): getrennte Stoppuhren für sprachliche und inhaltliche Korrektur; die Kacheln „Ø pro Korrektur“ und „Aktuelle Korrektur“ zeigen beide Werte (sprachl. und inhaltl.) und fett die Summe (Σ)
+- **Zeitmessung** nach dem Pomodoro-Prinzip. Ein gemeinsamer Button startet (grün) und stoppt (rot) die Korrektur einer Seite. „Zeit pausieren“ hält nur die Zeit der aktuellen Korrektur an, der große Button wird dann gelb („Korrektur fortsetzen“). Ein kurzer Schutz verhindert, dass ein Doppeltippen direkt nach dem Start sofort stoppt. In der Oberstufe bleiben „Sprachlich“ und „Inhaltlich“ getrennt, dazu „Stopp: fertig“ und „Zeit pausieren“ bzw. „Korrektur fortsetzen“. Nach jeder Arbeitsphase fragt ein kleines Fenster in der Seite (kein Browser-Pop-up) „Pause jetzt einlegen?“: **Ja** startet die Pause, **Nein** startet direkt eine neue Arbeitsphase, **Später erinnern** verschiebt die Pause um frei wählbare Minuten (in 0,5-Schritten, z. B. 1,5). Solange das Fenster offen ist, steht die Zeit der Korrektur. **Toilettenpause jetzt einlegen** startet sofort eine 5-Minuten-Pause (Zeit der Korrektur angehalten); danach läuft die Arbeitsphase dort weiter, wo sie war, und „Pause überspringen“ beendet sie früher. Dazu Durchschnitt pro Seite, Pausen mit Augenpausen-Tipp. Der Durchschnitt lässt sich pro Kurs mit dem Button ↺ in der Kachel „Ø pro Seite“ nach einer Bestätigung zurücksetzen. Die gemessenen Zeiten bleiben dabei gespeichert, auch in der Excel-Tabelle (dort zählen die Durchschnitte dann erst ab dem Zurücksetzen).
+- **Oberstufe** (E, Q, Q1 bis Q4): getrennte Stoppuhren für sprachliche und inhaltliche Korrektur; die Kacheln „Ø pro Seite“ und „Aktuelle Seite“ zeigen beide Werte (sprachl. und inhaltl.) und fett die Summe (Σ)
 - **Uhren** (digital und analog) und Bildschirm bleibt an (wo der Browser es erlaubt). Der Hinweis zur Systemeinstellung erscheint nur, wenn du auf das ⓘ neben dem Button tippst, und verschiebt die Seite nicht.
 - **PONS-Wörterbuch** (Französisch oder Spanisch, je nach Kurs), öffnet in einem neuen Tab
 - **KI-Übersetzer und Fehleranalyse** mit Claude: Übersetzung, Fehler nach Grammatik, Lexik und Syntax, korrigierte Fassung. Mit API-Key direkt in der Seite, **ohne Key** über die Claude-App: Prompt kopieren, dort einfügen, Antwort zurück in die Seite einfügen
@@ -37,8 +37,8 @@ Eine einzelne Webseite (`index.html`), die beim Korrigieren von Schülerarbeiten
 1. Startseite → **Neue Arbeit korrigieren**.
 2. **Schritt 1 (optional):** Anthropic-API-Key eingeben (erstellbar in der Claude Console, die API wird nach Verbrauch abgerechnet). Er wird nur im Browser des jeweiligen Geräts gespeichert und nur an Anthropic gesendet. Ohne Key geht „Ohne API-Key fortfahren".
 3. **Schritt 2:** Fach, Jahrgangsstufe (z. B. `9er`, `E`, `Q1`), optional einen Kursnamen und die Anzahl der Korrekturen eingeben.
-4. Bei „Wie viele Aufgaben hat eine Klausur?" die Aufgabenzahl eintragen (1 = keine Aufgaben-Aufteilung) und angeben, wie viele Aufgaben schon komplett korrigiert sind.
-5. **Start** drücken (der Button leuchtet grün und zeigt „Läuft …"), korrigieren, mit **Stopp** oder **Erledigt (ohne Zeit)** weiterzählen. Eine Korrektur zählt immer für die aktive Aufgabe.
+4. Bei „Wie viele Seiten hat die Arbeit?“ die Seitenzahl eintragen (1 = keine Aufteilung) und angeben, bei wie vielen Seiten schon alle Arbeiten korrigiert sind.
+5. **Start** drücken (der Button leuchtet grün und zeigt „Läuft …"), korrigieren, mit **Stopp** oder **Erledigt (ohne Zeit)** weiterzählen. Eine Korrektur zählt immer für die aktive Seite.
 
 ## Daten und Datenschutz
 
@@ -62,8 +62,8 @@ Am Anfang des Skripts in `index.html` stehen Konstanten:
 | `PAUSE_KURZ_MIN` | kurze Pause | 5 |
 | `PAUSE_LANG_MIN` | lange Pause | 15 |
 | `RUNDEN_BIS_LANGE_PAUSE` | lange Pause nach so vielen Runden | 4 |
-| `SCHAETZ_SEK1_MIN` | grobe Schätzung pro Korrektur (Sek I) | 20 |
-| `SCHAETZ_SPR_MIN` / `SCHAETZ_INH_MIN` | grobe Schätzung Oberstufe, sprachlich / inhaltlich | 25 / 20 |
+| `SCHAETZ_SEK1_MIN` | grobe Schätzung pro ganze Arbeit (Sek I), wird auf die Seiten verteilt | 20 |
+| `SCHAETZ_SPR_MIN` / `SCHAETZ_INH_MIN` | grobe Schätzung pro ganze Arbeit, Oberstufe, sprachlich / inhaltlich | 25 / 20 |
 
 Erscheint bei der Analyse die Meldung „Modell nicht gefunden", ist der Wert in `MODEL` zu prüfen.
 
@@ -71,7 +71,7 @@ Erscheint bei der Analyse die Meldung „Modell nicht gefunden", ist der Wert in
 
 - PONS lässt sich nicht in die Seite einbetten und öffnet deshalb immer in einem neuen Tab.
 - „Bildschirm bleibt an" nutzt die Wake-Lock-Funktion des Browsers. Wo sie fehlt, zeigt die Seite einen Hinweis auf die Systemeinstellung (iOS: Einstellungen → Anzeige & Helligkeit → Automatische Sperre → Nie).
-- Der Code mit Stand (z. B. `9erSpa28-12`) gilt nur für Kurse mit einer Aufgabe pro Klausur. Bei mehreren Aufgaben nutze die Datensicherung.
+- Der Code mit Stand (z. B. `9erSpa28-12`) gilt nur für Kurse mit einer Seite pro Arbeit. Bei mehreren Seiten nutze die Datensicherung.
 - Die Seite braucht Internet für die KI-Analyse und für PONS. Zeitmessung, Fortschritt und Auswertungen funktionieren auch ohne.
 - Die Restzeit und die Feierabend-Prognose sind Schätzungen. Ohne eigene Messung rechnet die Seite mit Standardwerten und kennzeichnet das.
 
